@@ -4,7 +4,7 @@
 #include "hack.h"
 
 void init() {
-    file = fopen("../boot", "r+");
+    file = fopen("../boot.img", "r+");
     hdr = (FAT12_Hdr *)malloc(sizeof(FAT12_Hdr));
     fseek(file, 0, SEEK_SET);
     fread((void *)hdr, sizeof(FAT12_Hdr), 1, file);
@@ -20,10 +20,12 @@ void init() {
 
 int FAT12GetFATValue(int index) {
     int indbyt = index * 3 / 2;
-    if (index % 2)
-        return ((fat[indbyt] & 0x0f) << 8) | fat[indbyt + 1];
+    int a = fat[indbyt];
+    int b = fat[indbyt + 1];
+    if (index % 2 == 0)
+        return ((b & 0x0f) << 8) | a;
     else
-        return ((fat[indbyt] << 8) | (fat[indbyt + 1] & 0xf0)) >> 4;
+        return (b << 4) | ((a & 0xf0) >> 4);
 }
 
 void FAT12PrintFile(FAT12_DIR entry) {
@@ -34,22 +36,42 @@ void FAT12PrintFile(FAT12_DIR entry) {
     printf("DIR_FILESIZE: %d\n", entry.fileSize);
 }
 
+void FAT12List(char * path) {
+
+}
+
+void list_root() {
+    int i = 0;
+    for (; i < hdr->BPB_RootEntCnt; i++)
+        if (root[i].fstClus != 0 && FAT12GetFATValue(root[i].fstClus) != 0 && root[i].name[0] != 229) {
+            FAT12PrintFile(root[i]);
+            printf("\n");
+        }
+}
+
+void list_secs(int fst) {
+    while (FAT12GetFATValue(fst) < THRESHOLD) {
+        printf("%d ", fst);
+        fst = FAT12GetFATValue(fst);
+    }
+}
+
 int main(int argc, char * argv[]) {
     int i, s = 0;
-    char buffer[100];
+    FAT12_DIR inh[16];
     init();
-    for (i = 0; i < hdr->BPB_RootEntCnt; i++)
-        if (root[i].fstClus != 0 && FAT12GetFATValue(root[i].fstClus) != 0) {
-            FAT12PrintFile(root[i]);
-            s++;
-        }
-    printf("sum: %d files\n", s);
-    printf("%d\n", FAT12GetFATValue(3));
+    list_root();
     /*
-    fseek(file, SECT(11) * 512, SEEK_SET);
-    fread((void *)buffer, 4, 1, file);
-    buffer[4] = 0;
-    printf("%s\n", buffer);
+    for (i = 0; i < hdr->BPB_RootEntCnt; i++)
+        if (root[i].fstClus != 0 && FAT12GetFATValue(root[i].fstClus) != 0 && root[i].attr == 16) {
+            fseek(file, SECT(root[i].fstClus) * 512, SEEK_SET);
+            fread((void *)inh, sizeof(FAT12_DIR), 16, file);
+            break;
+        }
+    for (i = 0; i < 16; i++) {
+        FAT12PrintFile(inh[i]);
+        printf("\n");
+    }
     */
     return 0;
 }

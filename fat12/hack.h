@@ -1,4 +1,5 @@
 #define SECT(fstClus) ((fstClus) - 2 + hdr->BPB_RsvdSecCnt + hdr->BPB_FATSz16 * hdr->BPB_NumFATs + hdr->BPB_RootEntCnt * sizeof(FAT12_DIR) / hdr->BPB_BytsPerSec)
+#define THRESHOLD 0xff8
 
 /* pack(n) will force compiler do n-byte align */
 #pragma pack(1)
