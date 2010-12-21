@@ -45,7 +45,6 @@ task1:
 
 task2:
 .loop:
-    sti
     mov ah, 0eh
     mov al, 'B'
     mov bl, 1110b
