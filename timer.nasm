@@ -24,15 +24,11 @@ timer:
     inc byte [.flg]
     pop word [IP1]
     push word [IP2]
-    ; pop word [IP1]
-    ; push word [IP1]
     jmp .end
 .1:
     dec byte [.flg]
     pop word [IP2]
     push word [IP1]
-    ; pop word [IP1]
-    ; push word [IP1]
 .end:
     mov al, 0x20
     out 0x20, al
