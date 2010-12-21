@@ -5,10 +5,13 @@
     int 10h
 %endmacro
 
-BaseOfLoader    equ 0900h
-OffsetOfLoader  equ 0100h
+BaseOfLoader    equ 0800h
+OffsetOfLoader  equ 0000h
 RootDirSectors  equ 14
 FirstRootSector equ 19
+StackTop        equ 0400h
+
+THRESHOLD       equ 0xff8
 
 org 0x7c00
 jmp short start
@@ -32,14 +35,14 @@ BS_DrvNum       db  0x0
 BS_Reserved1    db  0x0
 BS_BootSig      db  0x29
 BS_VolID        dd  0x0
-BS_VolLab       db  "NO NAME   ", 0
+BS_VolLab       db  "FreeYYOS", 0, 0, 0
 BS_FileSysType  db  "FAT12  ", 0   
 
 start:
     mov ax, cs
     mov ds, ax
+    mov ax, StackTop
     mov ss, ax
-    mov es, ax
     mov sp, 0x7c00
     ; init A:\
     xor ah, ah
@@ -65,10 +68,8 @@ start:
     je .research
     ; found!
     jmp load
-    jmp .end
 .noloader:
     PRINT 'N'
-.end:
     jmp $
 
 read:
@@ -152,9 +153,49 @@ load:
     mov bx, OffsetOfLoader
     mov cl, 9
     call read
+    push word [search.ret]
+    mov bp, sp
 
     mov ax, word [search.ret]
+.chain:
     call fatentry
+    cmp word [fatentry.ret], THRESHOLD
+    jge .realload
+    push word [fatentry.ret]
+    inc word [.n]
+    mov ax, word [fatentry.ret]
+    jmp .chain
+.realload:
+    mov bx, OffsetOfLoader
+.realload.read:
+    mov ax, word [bp]
+    sub ax, 2
+    add ax, FirstRootSector
+    add ax, RootDirSectors
+    mov cl, 1
+    call read
+    sub bp, 2
+    add bx, 512
+    call .modify
+    dec word [.n]
+    cmp word [.n], 0
+    je .end
+    jmp .realload.read
+.end:
+    pushf
+    push BaseOfLoader
+    push OffsetOfLoader
+    iret
+.n dw 1
+.modify:
+    cmp bx, 0x1000
+    jle .modify.end
+    mov ax, es
+    add ax, 0x0100
+    mov es, ax
+    sub bx, 0x1000
+.modify.end:
+    ret
 
 fatentry:
 ; ax -> FAT index
