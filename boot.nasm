@@ -197,9 +197,8 @@ load:
     je .end
     jmp .realload.read
 .end:
-    ; dump stack
-    mov sp, 0x7c00
     ; long jump!
+    jmp $
     pushf
     push BaseOfLoader
     push OffsetOfLoader

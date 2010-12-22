@@ -5,13 +5,14 @@
     int 10h
 %endmacro
 
-org 9100h
-    PRINT 'F'
-    PRINT 'i'
-    PRINT 'n'
-    PRINT 'i'
-    PRINT 's'
-    PRINT 'h'
-    PRINT 'e'
-    PRINT 'd'
+start:
+    ; init
+    mov ax, cs 
+    mov ds, ax
+    mov es, ax
+    PRINT 'O'
+    PRINT 'K'
     jmp $
+
+times 0x11000-($-$$) db 3
+

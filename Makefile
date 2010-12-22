@@ -8,3 +8,7 @@ boot.img: boot.nasm
 
 loader.bin: loader.nasm
 	$(CC) -o loader.bin loader.nasm
+
+clean:
+	rm boot.img
+	rm loader.bin
