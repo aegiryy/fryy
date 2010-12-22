@@ -50,16 +50,26 @@ start:
     ; read sector test
     mov ax, BaseOfLoader
     mov es, ax
+    mov ax, FirstRootSector 
+.research:
     mov bx, OffsetOfLoader
-    mov ax, 1
     mov cl, 1
+    push ax
     call read
-    ; test
-    cmp byte [es:bx], 0xf0
-    jne .end
+    call search
+    pop ax
+    inc ax
+    cmp ax, FirstRootSector + RootDirSectors
+    je .noloader
+    cmp word [search.ret], 0
+    je .research
+    ; found!
     PRINT 'Y'
-.end:
+    jmp load
+    jmp .end
+.noloader:
     PRINT 'N'
+.end:
     jmp $
 
 read:
@@ -103,7 +113,52 @@ clear:
     mov dx, 0
     int 10h
     ret
-    
+
+search:
+    ; search loader
+    mov ax, BaseOfLoader
+    mov es, ax
+    mov bx, OffsetOfLoader
+    mov cx, 0
+.cmp:
+    mov si, 0
+.cmp.loop:
+    mov ah, [.str + si]
+    mov al, [es:bx + si]
+    cmp ah, al
+    jne .next
+    inc si
+    cmp si, 11
+    je .next
+    jmp .cmp.loop
+.next:
+    cmp si, 11
+    je .found
+    add bx, 32
+    add cx, 32
+    cmp cx, 512
+    je .end
+    jmp .cmp
+.found:
+    mov ax, [es:bx + 26]
+    mov word [search.ret], ax
+.end:
+    ret
+.str db 'LOADER  BIN'
+search.ret dw 0
+
+load:
+    mov ax, word [search.ret]
+    sub ax, 2
+    add ax, FirstRootSector
+    add ax, RootDirSectors
+    mov bx, OffsetOfLoader
+    mov cl, 1
+    call read
+    push es
+    pop cs
+    jmp OffsetOfLoader
+
 
 times 510-($-$$) db 0
 dw 0xaa55
