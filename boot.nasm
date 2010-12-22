@@ -64,7 +64,6 @@ start:
     cmp word [search.ret], 0
     je .research
     ; found!
-    PRINT 'Y'
     jmp load
     jmp .end
 .noloader:
@@ -148,7 +147,15 @@ search:
 search.ret dw 0
 
 load:
+; loading FAT
+    mov ax, 1
+    mov bx, OffsetOfLoader
+    mov cl, 9
+    call read
+
     mov ax, word [search.ret]
+    call fatentry
+
     sub ax, 2
     add ax, FirstRootSector
     add ax, RootDirSectors
@@ -158,6 +165,18 @@ load:
     push es
     pop cs
     jmp OffsetOfLoader
+
+fatentry:
+; ax -> FAT index
+    mov bx, ax
+    shr bx, 1
+    add ax, bx
+    mov si, ax
+    mov al, [es:OffsetOfLoader + si]
+    inc si
+    mov ah, [es:OffsetOfLoader + si]
+    jmp $
+fatentry.ret dw 0
 
 
 times 510-($-$$) db 0
