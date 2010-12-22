@@ -121,7 +121,7 @@ clear:
     ret
 
 search:
-    ; search loader
+    ; search loader's first root entry
     mov ax, BaseOfLoader
     mov es, ax
     mov bx, OffsetOfLoader
@@ -160,7 +160,7 @@ cmpstr:
 .str db 'LOADER  BIN'
 
 load:
-; loading FAT
+; loading FAT, using stack to store all segments indexes
     mov ax, 1
     mov bx, OffsetOfLoader
     mov cl, 9
@@ -173,11 +173,14 @@ load:
     call fatentry
     cmp word [fatentry.ret], THRESHOLD
     jge .realload
+    ; more are waiting for store
     push word [fatentry.ret]
     inc word [.n]
     mov ax, word [fatentry.ret]
     jmp .chain
+
 .realload:
+; loading segments refered by bp and [.n] to BaseOfLoader:OffsetOfLoader
     mov bx, OffsetOfLoader
 .realload.read:
     mov ax, word [bp]
@@ -194,12 +197,16 @@ load:
     je .end
     jmp .realload.read
 .end:
+    ; dump stack
+    mov sp, 0x7c00
+    ; long jump!
     pushf
     push BaseOfLoader
     push OffsetOfLoader
     iret
-.n dw 1
+
 .modify:
+; modify es:bx in case of bx's overflow
     cmp bx, 0x1000
     jle .modify.end
     mov ax, es
@@ -208,6 +215,8 @@ load:
     sub bx, 0x1000
 .modify.end:
     ret
+
+.n dw 1
 
 fatentry:
 ; ax -> FAT index

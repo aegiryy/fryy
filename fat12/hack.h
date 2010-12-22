@@ -41,3 +41,8 @@ FILE * file;
 FAT12_Hdr * hdr;
 FAT12_DIR * root;
 unsigned char * fat;
+
+void FAT12PrintFile(FAT12_DIR entry);
+int FAT12GetFATValue(int index);
+void FAT12Init();
+void FAT12DeInit();

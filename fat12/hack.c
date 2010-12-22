@@ -3,7 +3,8 @@
 #include <string.h>
 #include "hack.h"
 
-void init() {
+void FAT12Init() {
+    /* Initilize (1) FAT12 header, (2) ROOT sectors and (3) File Allocation Table(FAT). */
     file = fopen("../boot.img", "r+");
     hdr = (FAT12_Hdr *)malloc(sizeof(FAT12_Hdr));
     fseek(file, 0, SEEK_SET);
@@ -18,7 +19,15 @@ void init() {
     fread((void *)fat, hdr->BPB_FATSz16 * hdr->BPB_BytsPerSec, 1, file);
 }
 
+void FAT12DeInit() {
+    fclose(file);
+    free(hdr);
+    free(root);
+    free(fat);
+}
+
 int FAT12GetFATValue(int index) {
+    /* An FAT entry occupies 12 bits (1.5 bytes), this function returns FAT entry value */
     int indbyt = index * 3 / 2;
     int a = fat[indbyt];
     int b = fat[indbyt + 1];
@@ -29,6 +38,7 @@ int FAT12GetFATValue(int index) {
 }
 
 void FAT12PrintFile(FAT12_DIR entry) {
+    /* List file specification of an file entry in root sector or dirctories. */
     printf("DIR_NAME: %s\n", entry.name);
     printf("DIR_ATTR: %d\n", entry.attr);
     printf("DIR_WRTTIME: %d\n", entry.wrtTime);
@@ -43,7 +53,7 @@ void FAT12List(char * path) {
 void list_root() {
     int i = 0;
     for (; i < hdr->BPB_RootEntCnt; i++)
-        if (root[i].fstClus != 0 && FAT12GetFATValue(root[i].fstClus) != 0 && root[i].name[0] != 229) {
+        if (root[i].fstClus != 0 && FAT12GetFATValue(root[i].fstClus) != 0 && root[i].name[0] >= 'A' && root[i].name[0] <= 'Z') {
             FAT12PrintFile(root[i]);
             printf("\n");
         }
@@ -57,21 +67,8 @@ void list_secs(int fst) {
 }
 
 int main(int argc, char * argv[]) {
-    int i, s = 0;
-    FAT12_DIR inh[16];
-    init();
+    FAT12Init();
     list_root();
-    /*
-    for (i = 0; i < hdr->BPB_RootEntCnt; i++)
-        if (root[i].fstClus != 0 && FAT12GetFATValue(root[i].fstClus) != 0 && root[i].attr == 16) {
-            fseek(file, SECT(root[i].fstClus) * 512, SEEK_SET);
-            fread((void *)inh, sizeof(FAT12_DIR), 16, file);
-            break;
-        }
-    for (i = 0; i < 16; i++) {
-        FAT12PrintFile(inh[i]);
-        printf("\n");
-    }
-    */
+    FAT12DeInit();
     return 0;
 }
