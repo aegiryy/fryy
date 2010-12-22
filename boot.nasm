@@ -179,7 +179,7 @@ fatentry:
     mov word [fatentry.ret], ax
     jmp .end
 .end:
-    jmp $
+    ret
 fatentry.ret dw 0
 
 
