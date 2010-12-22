@@ -156,18 +156,9 @@ load:
     mov ax, word [search.ret]
     call fatentry
 
-    sub ax, 2
-    add ax, FirstRootSector
-    add ax, RootDirSectors
-    mov bx, OffsetOfLoader
-    mov cl, 1
-    call read
-    push es
-    pop cs
-    jmp OffsetOfLoader
-
 fatentry:
 ; ax -> FAT index
+    push ax
     mov bx, ax
     shr bx, 1
     add ax, bx
@@ -175,6 +166,19 @@ fatentry:
     mov al, [es:OffsetOfLoader + si]
     inc si
     mov ah, [es:OffsetOfLoader + si]
+    pop bx
+    and bx, 1
+    cmp bx, 0
+    je .even
+    ; odd number
+    shr ax, 4
+    mov word [fatentry.ret], ax
+    jmp .end
+.even:
+    and ah, 0x0f
+    mov word [fatentry.ret], ax
+    jmp .end
+.end:
     jmp $
 fatentry.ret dw 0
 
