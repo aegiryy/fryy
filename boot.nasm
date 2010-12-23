@@ -51,26 +51,32 @@ start:
     ; clear screen
     call clear
     ; read sector test
-    mov ax, BaseOfLoader
-    mov es, ax
-    mov ax, FirstRootSector 
 .research:
-    mov bx, OffsetOfLoader
-    mov cl, 1
-    push ax
-    call read
+    movzx ax, byte [.rootindex]
+    call readroot
+    inc byte [.rootindex]
     call search
-    pop ax
-    inc ax
-    cmp ax, FirstRootSector + RootDirSectors
+    cmp byte [.rootindex], RootDirSectors
     je .noloader
     cmp word [search.ret], 0
     je .research
-    ; found!
     jmp load
 .noloader:
     PRINT 'N'
     jmp $
+.rootindex db 0
+
+readroot:
+; DESCRIPTION: read a root sector (512 byte) into memory (BaseOfLoader:OffsetOfLoader)
+; ax -> index of root sector
+    mov bx, BaseOfLoader
+    mov es, bx
+    mov bx, OffsetOfLoader
+    ; FAT etc are before ROOTs
+    add ax, FirstRootSector
+    mov cl, 1
+    call read
+    ret
 
 read:
 ; ax -> sector index
@@ -121,17 +127,7 @@ search:
     mov bx, OffsetOfLoader
     mov cx, 0
 .cmp:
-    mov si, 0
-.cmp.loop:
-    mov ah, [.str + si]
-    mov al, [es:bx + si]
-    cmp ah, al
-    jne .next
-    inc si
-    cmp si, 11
-    je .next
-    jmp .cmp.loop
-.next:
+    call cmpstr
     cmp si, 11
     je .found
     add bx, 32
@@ -144,8 +140,24 @@ search:
     mov word [search.ret], ax
 .end:
     ret
-.str db 'LOADER  BIN'
 search.ret dw 0
+
+cmpstr:
+; es:bx -> target string 
+; si == 11 means match
+    mov si, 0
+.loop:
+    mov ah, [.str + si]
+    mov al, [es:bx + si]
+    cmp ah, al
+    jne .end
+    inc si
+    cmp si, 11
+    je .end
+    jmp .loop
+.end:
+    ret
+.str db 'LOADER  BIN'
 
 load:
 ; loading FAT
