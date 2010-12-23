@@ -5,7 +5,8 @@
     int 10h
 %endmacro
 
-BaseOfLoader    equ 0800h
+
+BaseOfLoader    equ 1000h
 OffsetOfLoader  equ 0000h
 RootDirSectors  equ 14
 FirstRootSector equ 19
@@ -62,8 +63,17 @@ start:
     je .research
     jmp load
 .noloader:
-    PRINT 'N'
+    push .noloader.str
+    pop bp
+    push ds
+    pop es
+    mov cx, 16
+    mov ax, 01301h
+    mov bx, 000ch
+    mov dx, 0
+    int 10h
     jmp $
+.noloader.str db 'OS.BIN NOT FOUND'
 .rootindex db 0
 
 readroot:
@@ -157,7 +167,7 @@ cmpstr:
     jmp .loop
 .end:
     ret
-.str db 'LOADER  BIN'
+.str db 'OS      BIN'
 
 load:
 ; loading FAT, using stack to store all segments indexes
@@ -198,7 +208,6 @@ load:
     jmp .realload.read
 .end:
     ; long jump!
-    jmp $
     pushf
     push BaseOfLoader
     push OffsetOfLoader
