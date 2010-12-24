@@ -14,21 +14,23 @@ This PROJECT has two purposes:
 ROADMAP:
 
 (1) Understanding BOOT procedure of 8086 system (FLOPPY only!)
-    (a) Creating DEV environment -- QEMU (http://qemu.org), an emulator 
+    a)  Creating DEV environment -- QEMU (http://qemu.org), an emulator 
         that can provides virtual environments of 80386, x86_64, ARM, 
         MIPS, SPARC, etc.
 (2) Getting familar with INTEL 8086 ISA 
-    (a) Read INTEL 8086 Manual
-    (b) Download & Install NASM (http://www.nasm.us/pub/nasm/releasebuilds/2.09.04/)
-    (c) Read NASM's manual (http://www.nasm.us/xdoc/2.09.04/nasmdoc.pdf)
+    a)  Read INTEL 8086 Manual
+    b)  Download & Install NASM (http://www.nasm.us/pub/nasm/releasebuilds/2.09.04/)
+    c)  Read NASM's manual (http://www.nasm.us/xdoc/2.09.04/nasmdoc.pdf)
 (3) Understanding FAT12 specifications
-    (a) Create a virtual floppy image (boot.img, source: boot.nasm)
+    a)  Create a virtual floppy image (boot.img, source: boot.nasm)
 (4) Build a bootloader of our future OS
-    (a) Understanding the limit of floppy boot: code size limit of 512B
-    (b) BootLoader construction process:
-        * Search OS.BIN in RootDirSectors
-        * Read File Allocation Table (FAT) for details
-        * Loading OS.BIN using BIOS INT (0x13)
-        * Transfer control to OS.BIN
-(5) Building OS.BIN (see source file os.nasm)
+    a)  Understanding the limit of floppy boot: code size limit of 512B
+    b)  BootLoader construction process:
+            * Search OS.BIN in RootDirSectors
+            * Read File Allocation Table (FAT) for details
+            * Loading OS.BIN using BIOS INT (0x13)
+            * Transfer control to OS.BIN
+(5) Build OS.BIN (see source file os.nasm)
+    a)  Download Bruce's C Compiler (bcc)
+    b)  Write OS
 ------------------------------------------------------------------------
