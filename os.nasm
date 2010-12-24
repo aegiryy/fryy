@@ -1,3 +1,4 @@
+; Set interrupt handler
 %macro SETHANDLER 2
     push ds
     mov ax, 0
@@ -7,7 +8,8 @@
     pop ds
 %endmacro
 
-%macro TASK 4
+; Task Control Block
+%macro TCB 4
     dw %1 ; FLAG
     dw %2 ; CS
     dw %3 ; IP
@@ -99,8 +101,8 @@ scheduler:
     
 curtsk dw 0
 
-tsk_pa TASK 0, 0, 0, tsk_pb
-tsk_pb TASK 0, 0, 0, tsk_pc
-tsk_pc TASK 0, 0, 0, tsk_pa
+tsk_pa TCB 0, 0, 0, tsk_pb
+tsk_pb TCB 0, 0, 0, tsk_pc
+tsk_pc TCB 0, 0, 0, tsk_pa
 
 times 0x8f600-($-$$) db 3
