@@ -45,6 +45,6 @@ ROADMAP:
                 -o:     target file
             See manuals for details of bcc, as86, ld86.
     b)  Write OS
-        Now, a very simple task management system is implemented. See
+        Now, a very simple process management system is implemented. See
         os.c for details.
 ------------------------------------------------------------------------
