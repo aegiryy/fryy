@@ -105,4 +105,4 @@ tsk_pa TCB 0, 0, 0, tsk_pb
 tsk_pb TCB 0, 0, 0, tsk_pc
 tsk_pc TCB 0, 0, 0, tsk_pa
 
-times 0x8f600-($-$$) db 3
+times 0x8f600-($-$$) db 0

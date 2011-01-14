@@ -207,6 +207,9 @@ load:
     je .end
     jmp .realload.read
 .end:
+    ; fill DS
+    mov ax, BaseOfLoader
+    mov ds, ax
     ; long jump!
     pushf
     push BaseOfLoader

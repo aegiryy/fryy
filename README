@@ -32,5 +32,19 @@ ROADMAP:
             * Transfer control to OS.BIN
 (5) Build OS.BIN (see source file os.nasm)
     a)  Download Bruce's C Compiler (bcc)
+        HOWTO: Using BCC to generate flat binary file
+            bcc -0 -ansi -x -c source.c
+                -0:     generating 8086 (16bit) code
+                -ansi:  support ANSI C
+                -c:     compile only
+                -x:     do not link crt0.o
+            ld86 -d -Tsource.ld -M source.o -o source.bin
+                -d:     generate flat binary file
+                -T:     linker script for organizing segments
+                -M:     print organization
+                -o:     target file
+            See manuals for details of bcc, as86, ld86.
     b)  Write OS
+        Now, a very simple task management system is implemented. See
+        os.c for details.
 ------------------------------------------------------------------------
