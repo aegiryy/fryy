@@ -48,3 +48,16 @@ ROADMAP:
         Now, a very simple process management system is implemented. See
         os.c for details.
 ------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+HOW TO RUN IT?
+
+(1) Install QEMU & BCC Suite (including bcc, as86 and ld86)
+(2) make
+(3) Put os.bin to boot.img (e.g. under Linux).
+    a)  mkdir /mnt/floppy/
+    b)  mount -o loop boot.img /mnt/floppy/
+    c)  cp os.bin /mnt/floppy/  
+    d)  umount /mnt/floppy/
+(4) qemu -fda boot.img
+------------------------------------------------------------------------
