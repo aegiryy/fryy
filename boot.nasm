@@ -5,7 +5,6 @@
     int 10h
 %endmacro
 
-
 BaseOfLoader    equ 1000h
 OffsetOfLoader  equ 0000h
 RootDirSectors  equ 14

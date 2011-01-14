@@ -114,8 +114,6 @@ void scheduler(int cs, int flag)
      * are wrong, for (int *)ptr is 
      * associated with DS rather than
      * SS.
-     */
-    /*
     int * ptr = &flag;
     curtsk->flag = *ptr;
     ptr--;
