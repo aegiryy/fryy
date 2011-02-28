@@ -1,53 +1,66 @@
+#include "os.h"
 void putc(char c);
 void task1();
 void task2();
 void task3();
-void init_task(tcb_t * tcb, void (*task)(), int cs, int flag);
+void init_task(pcb_t * pcb, void (*task)(), int cs, int flag, pcb_t * next);
 static void set_timer(void (*scheduler)());
 static void scheduler();
 
-typedef struct _tcb
+typedef struct _pcb_t
 {
-    int ip;
-    int cs;
-    int flag;
-    struct _tcb * next;
-} tcb_t;
+    /* AX BX CX DX
+     * SP BP SI DI
+     * CS DS SS ES
+     * IP FLAGS
+     */
+    int reg[REGCNT];
+    struct _pcb_t * next;
+    char stk[STKSZ];
+} pcb_t;
 
-tcb_t * curtsk = 0;
-tcb_t tcb1;
-tcb_t tcb2;
-tcb_t tcb3;
+pcb_t * curtsk = 0;
+pcb_t pcb1;
+pcb_t pcb2;
+pcb_t pcb3;
 
 void main()
 {
-    init_task(&tcb1, task1, 0x1000, 0x0202, &tcb2);
-    init_task(&tcb2, task2, 0x1000, 0x0202, &tcb3);
-    init_task(&tcb3, task3, 0x1000, 0x0202, &tcb1);
+    asm "mov ax, cs";
+    asm "mov ss, ax";
+    init_task(&pcb1, task1, 0x1000, 0x0202, &pcb2);
+    init_task(&pcb2, task2, 0x1000, 0x0202, &pcb3);
+    init_task(&pcb3, task3, 0x1000, 0x0202, &pcb1);
     set_timer(scheduler);
-    asm "jmp _task1";
+    curtsk = &pcb1;
+    asm "mov bx, word [_curtsk]";
+    asm "mov sp, word 8[bx]";
+    asm "pushf";
+    asm "push word 16[bx]";
+    asm "push word 24[bx]";
+    asm "iret";
 }
 
-void init_task(tcb_t * tcb, void (*task)(), int cs, int flag, tcb_t * next) {
-    tcb->ip = task;
-    tcb->cs = cs;
-    tcb->flag = flag;
-    tcb->next = next;
+
+void init_task(pcb_t * pcb, void (*task)(), int cs, int flag, pcb_t * next) {
+    int i;
+    for(i = 0; i < REGCNT; i++)
+        pcb->reg[i] = 0;
+    pcb->reg[IDXIP] = task;
+    pcb->reg[IDXFLG] = flag;
+    pcb->reg[IDXCS] = cs;
+    pcb->reg[IDXDS] = cs;
+    pcb->reg[IDXES] = cs;
+    pcb->reg[IDXSS] = cs;
+    pcb->reg[IDXSP] = &pcb->stk[STKSZ - 1];
+    pcb->next = next;
 }
 
 void task1()
 {
     while(1)
     {
-        asm "push ax";
-        asm "push bx";
-        asm "mov ah, #0x0e";
-        asm "mov al, #65";
-        asm "mov bl, #0x0c";
-        asm "int 0x10";
-        asm "pop bx";
-        asm "pop ax";
-        // putc('A');
+        putc('A');
     }
 }
 
@@ -55,15 +68,7 @@ void task2()
 {
     while(1)
     {
-        asm "push ax";
-        asm "push bx";
-        asm "mov ah, #0x0e";
-        asm "mov al, #66";
-        asm "mov bl, #0x0c";
-        asm "int 0x10";
-        asm "pop bx";
-        asm "pop ax";
-        // putc('B');
+        putc('B');
     }
 }
 
@@ -71,15 +76,7 @@ void task3()
 {
     while(1)
     {
-        asm "push ax";
-        asm "push bx";
-        asm "mov ah, #0x0e";
-        asm "mov al, #67";
-        asm "mov bl, #0x0c";
-        asm "int 0x10";
-        asm "pop bx";
-        asm "pop ax";
-        // putc('C');
+        putc('C');
     }
 }
 
@@ -129,22 +126,65 @@ void scheduler(int cs, int flag)
     */
     asm "push ax";
     asm "push bx";
-
-    asm "add sp, #4";
+    asm "push cx";
+    asm "push dx";
+    asm "push sp";
+    asm "push bp";
+    asm "push si";
+    asm "push di";
+    asm "push ds";
+    asm "push ss";
+    asm "push es";
     asm "mov bx, word [_curtsk]";
-    asm "pop word [bx]";
-    asm "pop word 2[bx]";
+    asm "pop word 22[bx]";
+    asm "pop word 20[bx]";
+    asm "pop word 18[bx]";
+    asm "pop word 14[bx]";
+    asm "pop word 12[bx]";
+    asm "pop word 10[bx]";
+    asm "pop word 8[bx]"; /* SP = SP + 14 */
+    asm "pop word 6[bx]";
     asm "pop word 4[bx]";
-    asm "mov bx, 6[bx]";
-    asm "mov word [_curtsk], bx";
-    asm "push word 4[bx]";
-    asm "push word 2[bx]";
-    asm "push word [bx]";
-    asm "sub sp, #4";
+    asm "pop word 2[bx]";
+    asm "pop word [bx]";
+    asm "pop word 24[bx]";
+    asm "pop word 16[bx]";
+    asm "pop word 26[bx]";
+    /* modify reg[IDXSP] by adding 14 */
+    asm "mov ax, word 8[bx]";
+    asm "add ax, #14";
+    asm "mov word 8[bx], ax";
 
+
+    asm "mov bx, 28[bx]"; /* bx = pcb->next */
+    asm "mov word [_curtsk], bx";
+    asm "push word 8[bx]";
+    asm "pop sp";
+    asm "push word 26[bx]";
+    asm "push word 16[bx]";
+    asm "push word 24[bx]";
+
+    asm "push word [bx]";
+    asm "push word 2[bx]";
+    asm "push word 4[bx]";
+    asm "push word 6[bx]";
+    asm "push word 10[bx]";
+    asm "push word 12[bx]";
+    asm "push word 14[bx]";
+    asm "push word 18[bx]";
+    asm "push word 20[bx]";
+    asm "push word 22[bx]";
+    asm "pop es";
+    asm "pop ss";
+    asm "pop ds";
+    asm "pop di";
+    asm "pop si";
+    asm "pop bp";
+    asm "pop dx";
+    asm "pop cx";
+    asm "pop bx";
     asm "mov al, #0x20";
     asm "out #0x20, al";
-    asm "pop bx";
     asm "pop ax";
     asm "iret";
 }
