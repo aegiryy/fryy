@@ -41,7 +41,6 @@ void main()
     asm "iret";
 }
 
-
 void init_task(pcb_t * pcb, void (*task)(), int cs, int flag, pcb_t * next) {
     int i;
     for(i = 0; i < REGCNT; i++)
@@ -107,29 +106,12 @@ void set_timer(void (*scheduler)())
 
 void scheduler(int cs, int flag)
 {
-    /* The following commented codes
-     * are wrong, for (int *)ptr is 
-     * associated with DS rather than
-     * SS.
-    int * ptr = &flag;
-    curtsk->flag = *ptr;
-    ptr--;
-    curtsk->cs = *ptr;
-    ptr--;
-    curtsk->ip = *ptr;
-    curtsk = curtsk->next;
-    *ptr = curtsk->ip;
-    ptr++;
-    *ptr = curtsk->cs;
-    ptr++;
-    *ptr = curtsk->flag;
-    */
     asm "push ax";
     asm "push bx";
     asm "push cx";
     asm "push dx";
-    asm "push sp";
     asm "push bp";
+    /* SP should be saved seperatly */
     asm "push si";
     asm "push di";
     asm "push ds";
@@ -142,7 +124,6 @@ void scheduler(int cs, int flag)
     asm "pop word 14[bx]";
     asm "pop word 12[bx]";
     asm "pop word 10[bx]";
-    asm "pop word 8[bx]"; /* SP = SP + 14 */
     asm "pop word 6[bx]";
     asm "pop word 4[bx]";
     asm "pop word 2[bx]";
@@ -150,20 +131,20 @@ void scheduler(int cs, int flag)
     asm "pop word 24[bx]";
     asm "pop word 16[bx]";
     asm "pop word 26[bx]";
-    /* modify reg[IDXSP] by adding 14 */
-    asm "mov ax, word 8[bx]";
-    asm "add ax, #14";
-    asm "mov word 8[bx], ax";
-
+    asm "mov word 8[bx], sp";
+    /* Context of previous process is saved */
 
     asm "mov bx, 28[bx]"; /* bx = pcb->next */
     asm "mov word [_curtsk], bx";
-    asm "push word 8[bx]";
-    asm "pop sp";
+
+    /* Begin Restoring context of next process */
+    /* Switch stack space first */
+    asm "mov ss, word 20[bx]";
+    asm "mov sp, word 8[bx]";
+
     asm "push word 26[bx]";
     asm "push word 16[bx]";
     asm "push word 24[bx]";
-
     asm "push word [bx]";
     asm "push word 2[bx]";
     asm "push word 4[bx]";
@@ -172,10 +153,8 @@ void scheduler(int cs, int flag)
     asm "push word 12[bx]";
     asm "push word 14[bx]";
     asm "push word 18[bx]";
-    asm "push word 20[bx]";
     asm "push word 22[bx]";
     asm "pop es";
-    asm "pop ss";
     asm "pop ds";
     asm "pop di";
     asm "pop si";
