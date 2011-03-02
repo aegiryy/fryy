@@ -1,23 +1,10 @@
 #include "os.h"
-void putc(char c);
 void task1();
 void task2();
 void task3();
-void init_task(tcb_t * tcb, void (*task)(), int cs, int flag, tcb_t * next);
 static void set_timer(void (*scheduler)());
 static void scheduler();
 
-typedef struct _tcb_t
-{
-    /* AX BX CX DX
-     * SP BP SI DI
-     * CS DS SS ES
-     * IP FLAGS
-     */
-    int reg[REGCNT];
-    struct _tcb_t * next;
-    char stk[STKSZ];
-} tcb_t;
 
 tcb_t * curtsk = 0;
 tcb_t tcb1;
@@ -41,19 +28,6 @@ void main()
     asm "iret";
 }
 
-void init_task(tcb_t * tcb, void (*task)(), int cs, int flag, tcb_t * next) {
-    int i;
-    for(i = 0; i < REGCNT; i++)
-        tcb->reg[i] = 0;
-    tcb->reg[IDXIP] = task;
-    tcb->reg[IDXFLG] = flag;
-    tcb->reg[IDXCS] = cs;
-    tcb->reg[IDXDS] = cs;
-    tcb->reg[IDXES] = cs;
-    tcb->reg[IDXSS] = cs;
-    tcb->reg[IDXSP] = &tcb->stk[STKSZ - 1];
-    tcb->next = next;
-}
 
 void task1()
 {
@@ -79,18 +53,6 @@ void task3()
     }
 }
 
-void putc(char c)
-{
-    c = c;
-    asm "push ax";
-    asm "push bx";
-    asm "mov ah, #0x0e";
-    asm "mov al, 4[bp]";
-    asm "mov bl, #0x0c";
-    asm "int 0x10";
-    asm "pop bx";
-    asm "pop ax";
-}
 
 void set_timer(void (*scheduler)())
 {
