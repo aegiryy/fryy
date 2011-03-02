@@ -3,11 +3,11 @@ void putc(char c);
 void task1();
 void task2();
 void task3();
-void init_task(pcb_t * pcb, void (*task)(), int cs, int flag, pcb_t * next);
+void init_task(tcb_t * tcb, void (*task)(), int cs, int flag, tcb_t * next);
 static void set_timer(void (*scheduler)());
 static void scheduler();
 
-typedef struct _pcb_t
+typedef struct _tcb_t
 {
     /* AX BX CX DX
      * SP BP SI DI
@@ -15,24 +15,24 @@ typedef struct _pcb_t
      * IP FLAGS
      */
     int reg[REGCNT];
-    struct _pcb_t * next;
+    struct _tcb_t * next;
     char stk[STKSZ];
-} pcb_t;
+} tcb_t;
 
-pcb_t * curtsk = 0;
-pcb_t pcb1;
-pcb_t pcb2;
-pcb_t pcb3;
+tcb_t * curtsk = 0;
+tcb_t tcb1;
+tcb_t tcb2;
+tcb_t tcb3;
 
 void main()
 {
     asm "mov ax, cs";
     asm "mov ss, ax";
-    init_task(&pcb1, task1, 0x1000, 0x0202, &pcb2);
-    init_task(&pcb2, task2, 0x1000, 0x0202, &pcb3);
-    init_task(&pcb3, task3, 0x1000, 0x0202, &pcb1);
+    init_task(&tcb1, task1, 0x1000, 0x0202, &tcb2);
+    init_task(&tcb2, task2, 0x1000, 0x0202, &tcb3);
+    init_task(&tcb3, task3, 0x1000, 0x0202, &tcb1);
     set_timer(scheduler);
-    curtsk = &pcb1;
+    curtsk = &tcb1;
     asm "mov bx, word [_curtsk]";
     asm "mov sp, word 8[bx]";
     asm "pushf";
@@ -41,18 +41,18 @@ void main()
     asm "iret";
 }
 
-void init_task(pcb_t * pcb, void (*task)(), int cs, int flag, pcb_t * next) {
+void init_task(tcb_t * tcb, void (*task)(), int cs, int flag, tcb_t * next) {
     int i;
     for(i = 0; i < REGCNT; i++)
-        pcb->reg[i] = 0;
-    pcb->reg[IDXIP] = task;
-    pcb->reg[IDXFLG] = flag;
-    pcb->reg[IDXCS] = cs;
-    pcb->reg[IDXDS] = cs;
-    pcb->reg[IDXES] = cs;
-    pcb->reg[IDXSS] = cs;
-    pcb->reg[IDXSP] = &pcb->stk[STKSZ - 1];
-    pcb->next = next;
+        tcb->reg[i] = 0;
+    tcb->reg[IDXIP] = task;
+    tcb->reg[IDXFLG] = flag;
+    tcb->reg[IDXCS] = cs;
+    tcb->reg[IDXDS] = cs;
+    tcb->reg[IDXES] = cs;
+    tcb->reg[IDXSS] = cs;
+    tcb->reg[IDXSP] = &tcb->stk[STKSZ - 1];
+    tcb->next = next;
 }
 
 void task1()
@@ -134,7 +134,7 @@ void scheduler(int cs, int flag)
     asm "mov word 8[bx], sp";
     /* Context of previous process is saved */
 
-    asm "mov bx, 28[bx]"; /* bx = pcb->next */
+    asm "mov bx, 28[bx]"; /* bx = tcb->next */
     asm "mov word [_curtsk], bx";
 
     /* Begin Restoring context of next process */
