@@ -1,4 +1,4 @@
-#include "os.h"
+#include "kernel.h"
 void task1();
 void task2();
 void task3();
@@ -25,6 +25,7 @@ void main()
     curtsk->next->next = task_alloc(task3, 0x1000, 0x0202);
     curtsk->next->next->next = curtsk;
     set_timer(scheduler);
+    asm "sti";
     asm "mov bx, word [_curtsk]";
     asm "mov sp, word 8[bx]";
     asm "pushf";
