@@ -17,6 +17,8 @@ typedef struct _tcb_t
 } tcb_t;
 
 
+tcb_t * curtsk; /* current task */
+
 tcb_t * task_init(void (*task)(), int cs, int flag);
 int task_deinit();
 #endif

@@ -1,7 +1,5 @@
 #include "task.h"
 
-extern tcb_t * curtsk = 0;
-
 static tcb_t _freelist[MAXTSK];
 static char _is_init = 0;
 static void _init();
@@ -47,9 +45,29 @@ tcb_t * task_init(void (*task)(), int cs, int flag)
 
 int task_deinit()
 {
-    curtsk->next = _header->next;
-    _header->next = curtsk;
-    _count++;
+    ENTER_CRITICAL();
+    if(_count == 1)
+    {
+        curtsk->next = _header->next;
+        _header->next = curtsk;
+        curtsk = (tcb_t *)0;
+    }
+    else
+    {
+        tcb_t * tcb = curtsk;
+        while(tcb->next != curtsk)
+            tcb = tcb->next;
+        tcb->next = curtsk->next;
+        curtsk->next = _header->next;
+        _header->next = curtsk;
+        curtsk = tcb->next;
+    }
+    _count--;
+    EXIT_CRITICAL();
+}
+
+void set_curtsk(tcb_t * tsk)
+{
 }
 
 /* Below is static functions */
@@ -61,4 +79,5 @@ void _init()
         _freelist[i].next = _freelist + (i + 1);
     _header = _freelist;
     _is_init = 1;
+    curtsk = 0;
 }
