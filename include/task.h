@@ -16,5 +16,7 @@ typedef struct _tcb_t
     char stk[STKSZ];
 } tcb_t;
 
-tcb_t * task_alloc(void (*task)(), int cs, int flag);
+
+tcb_t * task_init(void (*task)(), int cs, int flag);
+int task_deinit();
 #endif

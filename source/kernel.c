@@ -5,19 +5,19 @@ void task3();
 static void set_timer(void (*scheduler)());
 static void scheduler();
 
-
-tcb_t * curtsk = 0;
-tcb_t tcb1;
-tcb_t tcb2;
-tcb_t tcb3;
 void main()
 {
     asm "mov ax, cs";
     asm "mov sp, ax";
-    curtsk = task_alloc(task1, 0x1000, 0x0202);
-    curtsk->next = task_alloc(task2, 0x1000, 0x0202);
-    curtsk->next->next = task_alloc(task3, 0x1000, 0x0202);
+    /*
+    curtsk = task_init(task1, 0x1000, 0x0202);
+    curtsk->next = task_init(task2, 0x1000, 0x0202);
+    curtsk->next->next = task_init(task3, 0x1000, 0x0202);
     curtsk->next->next->next = curtsk;
+    */
+    task_init(task1, 0x1000, 0x0202);
+    task_init(task2, 0x1000, 0x0202);
+    task_init(task3, 0x1000, 0x0202);
     set_timer(scheduler);
     asm "mov bx, word [_curtsk]";
     asm "mov sp, word 8[bx]";
