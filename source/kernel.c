@@ -13,19 +13,12 @@ tcb_t tcb3;
 void main()
 {
     asm "mov ax, cs";
-    asm "mov ss, ax";
-    /*
-    task_init(&tcb1, task1, 0x1000, 0x0202, &tcb2);
-    task_init(&tcb2, task2, 0x1000, 0x0202, &tcb3);
-    task_init(&tcb3, task3, 0x1000, 0x0202, &tcb1);
-    curtsk = &tcb1;
-    */
+    asm "mov sp, ax";
     curtsk = task_alloc(task1, 0x1000, 0x0202);
     curtsk->next = task_alloc(task2, 0x1000, 0x0202);
     curtsk->next->next = task_alloc(task3, 0x1000, 0x0202);
     curtsk->next->next->next = curtsk;
     set_timer(scheduler);
-    asm "sti";
     asm "mov bx, word [_curtsk]";
     asm "mov sp, word 8[bx]";
     asm "pushf";

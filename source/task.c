@@ -1,36 +1,25 @@
 #include "task.h"
 
-tcb_t freelist[MAXTSK];
-static char is_init = 0;
-static void global_init();
-static tcb_t * header;
-static int count = 0;
-
-void task_init(tcb_t * tcb, void (*task)(), int cs, int flag, tcb_t * next) {
-    int i;
-    for(i = 0; i < REGCNT; i++)
-        tcb->reg[i] = 0;
-    tcb->reg[IDXIP] = task;
-    tcb->reg[IDXFLG] = flag;
-    tcb->reg[IDXCS] = cs;
-    tcb->reg[IDXDS] = cs;
-    tcb->reg[IDXES] = cs;
-    tcb->reg[IDXSS] = cs;
-    tcb->reg[IDXSP] = &tcb->stk[STKSZ - 1];
-    tcb->next = next;
-}
+static tcb_t _freelist[MAXTSK];
+static char _is_init = 0;
+static void _init();
+static tcb_t * _header;
+static int _count = 0;
 
 tcb_t * task_alloc(void (*task)(), int cs, int flag)
 {
     tcb_t * tcb;
     int i;
-    if(!is_init)
-        global_init();
-    if(count >= MAXTSK)
+    if(!_is_init)
+        _init();
+    if(_count == MAXTSK)
+        /* if not available, return NULL */
         return (tcb_t *)0;
+    tcb = _header;
+    _header = _header->next;
     for(i = 0; i < REGCNT; i++)
         tcb->reg[i] = 0;
-    //count++;
+    _count++;
     tcb->reg[IDXIP] = task;
     tcb->reg[IDXFLG] = flag;
     tcb->reg[IDXCS] = cs;
@@ -43,11 +32,11 @@ tcb_t * task_alloc(void (*task)(), int cs, int flag)
 
 /* Below is static functions */
 
-void global_init()
+void _init()
 {
     int i;
     for(i = 0; i < MAXTSK - 1; i++)
-        freelist[i].next = freelist + (i + 1);
-    header = freelist;
-    is_init = 1;
+        _freelist[i].next = _freelist + (i + 1);
+    _header = _freelist;
+    _is_init = 1;
 }
