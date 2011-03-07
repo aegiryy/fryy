@@ -12,3 +12,13 @@ void putc(char c)
     asm "pop bx";
     asm "pop ax";
 }
+
+void puts(char * s)
+{
+    s = s;
+    while(*s)
+    {
+        putc(*s);
+        s++;
+    }
+}

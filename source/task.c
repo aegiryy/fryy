@@ -6,11 +6,11 @@ static res_t _reslist[MAXRES];
 static int _res_p;
 static char _is_init = 0;
 static int _count = 0; // task count in running list
-static tcb_t * _tail;
 
 static void _init();
 static void _add_tcb(tcb_t * tcb);
 static tcb_t * _remove_tcb();
+static tcb_t * _get_tail();
 
 tcb_t * task_init(void (*task)(), int cs, int flag)
 {
@@ -46,7 +46,7 @@ void task_deinit()
         task_set(curtsk);
     else
     {
-        putc('8');
+        puts("*#END#*");
         while(1);
     }
 }
@@ -111,6 +111,10 @@ void res_p(int res)
             tcb->next = _reslist[res].waitlist->next;
             _reslist[res].waitlist->next = tcb;
         }
+        /* save return address to tcb->reg[INDIP] */
+        asm "mov bx, word -6[bp]";
+        asm "mov ax, word 2[bp]";
+        asm "mov word 24[bx], ax";
         task_set(curtsk);
     }
     EXIT_CRITICAL();
@@ -124,6 +128,9 @@ void res_v(int res)
         /* put a task in the waitlist
          * to running list
          */
+        tcb_t * tcb = _reslist[res].waitlist;
+        _reslist[res].waitlist = _reslist[res].waitlist->next;
+        _add_tcb(tcb);
     }
     EXIT_CRITICAL();
 }
@@ -148,13 +155,13 @@ void _add_tcb(tcb_t * tcb)
     {
         curtsk = tcb;
         tcb->next = curtsk;
-        _tail = curtsk;
     }
     else
     {
-        _tail->next = tcb;
-        _tail = _tail->next;
-        _tail->next = curtsk;
+        tcb_t * tail = _get_tail();
+        tail->next = tcb;
+        tail = tail->next;
+        tail->next = curtsk;
     }
     _count++;
 }
@@ -162,6 +169,7 @@ void _add_tcb(tcb_t * tcb)
 tcb_t * _remove_tcb()
 {
     tcb_t * tcb = curtsk;
+    tcb_t * tail = _get_tail();
     if(curtsk == 0)
         return 0;
     if(curtsk->next == curtsk)
@@ -170,10 +178,19 @@ tcb_t * _remove_tcb()
     }
     else
     {
-        _tail->next = curtsk->next;
+        tail->next = curtsk->next;
         curtsk = curtsk->next;
     }
     _count--;
     return tcb;
 }
 
+tcb_t * _get_tail()
+{
+    tcb_t * tcb = curtsk;
+    if(curtsk == 0)
+        return 0;
+    while(tcb->next != curtsk)
+        tcb = tcb->next;
+    return tcb;
+}

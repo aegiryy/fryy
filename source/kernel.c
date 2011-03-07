@@ -1,9 +1,12 @@
 #include "kernel.h"
+
 void task1();
 void task2();
 void task3();
 static void set_timer(void (*scheduler)());
 static void scheduler();
+
+int res;
 
 void main()
 {
@@ -12,6 +15,7 @@ void main()
     task_init(task1, 0x1000, 0x0202);
     task_init(task2, 0x1000, 0x0202);
     task_init(task3, 0x1000, 0x0202);
+    res = res_init(1);
     set_timer(scheduler);
     task_set(curtsk);
 }
@@ -19,28 +23,39 @@ void main()
 
 void task1()
 {
-    while(1)
+    int s = 0x7fff;
+    P(res);
+    while(--s)
     {
         putc('A');
     }
+    V(res);
+    task_deinit();
 }
 
 void task2()
 {
-    while(1)
+    int s = 0x7fff;
+    P(res);
+    while(--s)
     {
         putc('B');
     }
+    V(res);
+    task_deinit();
 }
 
 void task3()
 {
-    while(1)
+    int s = 0x7fff;
+    P(res);
+    while(--s)
     {
         putc('C');
     }
+    V(res);
+    task_deinit();
 }
-
 
 void set_timer(void (*scheduler)())
 {

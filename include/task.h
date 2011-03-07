@@ -28,4 +28,9 @@ tcb_t * task_init(void (*task)(), int cs, int flag);
 void task_set(tcb_t * tcb);
 void task_deinit();
 int res_init(int c);
+void res_p(int res);
+#define P(res) res_p(res)
+void res_v(int res);
+#define V(res) res_v(res)
+
 #endif
