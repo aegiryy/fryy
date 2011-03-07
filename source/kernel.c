@@ -9,22 +9,11 @@ void main()
 {
     asm "mov ax, cs";
     asm "mov sp, ax";
-    /*
-    curtsk = task_init(task1, 0x1000, 0x0202);
-    curtsk->next = task_init(task2, 0x1000, 0x0202);
-    curtsk->next->next = task_init(task3, 0x1000, 0x0202);
-    curtsk->next->next->next = curtsk;
-    */
     task_init(task1, 0x1000, 0x0202);
     task_init(task2, 0x1000, 0x0202);
     task_init(task3, 0x1000, 0x0202);
     set_timer(scheduler);
-    asm "mov bx, word [_curtsk]";
-    asm "mov sp, word 8[bx]";
-    asm "pushf";
-    asm "push word 16[bx]";
-    asm "push word 24[bx]";
-    asm "iret";
+    task_set(curtsk);
 }
 
 
@@ -95,36 +84,7 @@ void scheduler(int cs, int flag)
     asm "mov word 8[bx], sp";
     /* Context of previous process is saved */
 
-    asm "mov bx, 28[bx]"; /* bx = tcb->next */
-    asm "mov word [_curtsk], bx";
-
-    /* Begin Restoring context of next process */
-    /* Switch stack space first */
-    asm "mov ss, word 20[bx]";
-    asm "mov sp, word 8[bx]";
-
-    asm "push word 26[bx]";
-    asm "push word 16[bx]";
-    asm "push word 24[bx]";
-    asm "push word [bx]";
-    asm "push word 2[bx]";
-    asm "push word 4[bx]";
-    asm "push word 6[bx]";
-    asm "push word 10[bx]";
-    asm "push word 12[bx]";
-    asm "push word 14[bx]";
-    asm "push word 18[bx]";
-    asm "push word 22[bx]";
-    asm "pop es";
-    asm "pop ds";
-    asm "pop di";
-    asm "pop si";
-    asm "pop bp";
-    asm "pop dx";
-    asm "pop cx";
-    asm "pop bx";
     asm "mov al, #0x20";
     asm "out #0x20, al";
-    asm "pop ax";
-    asm "iret";
+    task_set(curtsk->next);
 }

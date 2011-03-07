@@ -17,5 +17,7 @@
 #define IDXFLG 13
 #define REGCNT 14
 
+#define ENTER_CRITICAL() asm "cli"
+#define EXIT_CRITICAL() asm "sti"
 
 #endif

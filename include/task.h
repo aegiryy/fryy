@@ -16,9 +16,16 @@ typedef struct _tcb_t
     char stk[STKSZ];
 } tcb_t;
 
+typedef struct _res_t
+{
+    int count;
+    tcb_t * waitlist;
+} res_t;
 
 tcb_t * curtsk; /* current task */
 
 tcb_t * task_init(void (*task)(), int cs, int flag);
-int task_deinit();
+void task_set(tcb_t * tcb);
+void task_deinit();
+int res_init(int c);
 #endif
