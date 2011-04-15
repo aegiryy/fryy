@@ -15,7 +15,7 @@ void main()
     task_init(task1, 0x1000, 0x0202);
     task_init(task2, 0x1000, 0x0202);
     task_init(task3, 0x1000, 0x0202);
-    res = res_init(1);
+    res = res_init(2);
     set_timer(scheduler);
     task_set(curtsk);
 }

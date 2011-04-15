@@ -173,9 +173,7 @@ tcb_t * _remove_tcb()
     if(curtsk == 0)
         return 0;
     if(curtsk->next == curtsk)
-    {
         curtsk = 0;
-    }
     else
     {
         tail->next = curtsk->next;

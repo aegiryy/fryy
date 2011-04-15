@@ -15,7 +15,6 @@ void putc(char c)
 
 void puts(char * s)
 {
-    s = s;
     while(*s)
     {
         putc(*s);

@@ -257,5 +257,5 @@ fatentry.ret dw 0
 
 times 510-($-$$) db 0
 dw 0xaa55
-db 0xf0, 0xff, 0xff
-times 1024-($-$$) db 0
+;db 0xf0, 0xff, 0xff
+;times 1024-($-$$) db 0
