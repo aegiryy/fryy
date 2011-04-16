@@ -46,3 +46,6 @@ void FAT12PrintFile(FAT12_DIR entry);
 int FAT12GetFATValue(int index);
 void FAT12Init();
 void FAT12DeInit();
+
+#define IS_SUBDIR(attr) ((attr) & 0x10)
+#define IS_ARCHIVE(attr) ((attr) & 0x20)

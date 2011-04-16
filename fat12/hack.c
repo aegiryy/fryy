@@ -53,10 +53,61 @@ void FAT12List(char * path) {
 void list_root() {
     int i = 0;
     for (; i < hdr->BPB_RootEntCnt; i++)
-        if (root[i].fstClus != 0 && FAT12GetFATValue(root[i].fstClus) != 0 && root[i].name[0] >= 'A' && root[i].name[0] <= 'Z') {
+    {
+        if (IS_SUBDIR(root[i].attr) || IS_ARCHIVE(root[i].attr))
+        {
             FAT12PrintFile(root[i]);
             printf("\n");
         }
+    }
+}
+
+void print_name(FAT12_DIR entry, int level)
+{
+    int i;
+    char ascname[0xC];
+    for (i = 0; i < level; i++)
+        printf("\t");
+    strncpy(ascname, entry.name, 0xB);
+    ascname[0xB] = '\0';
+    printf("%s\n", ascname);
+}
+
+void list_tree(int level, int index) {
+    int i = 0;
+    if (level == 0)
+    {
+        for (i = 0; i < hdr->BPB_RootEntCnt; i++)
+        {
+            if (IS_SUBDIR(root[i].attr))
+            {
+                print_name(root[i], level);
+                list_tree(level + 1, root[i].fstClus);
+            }
+            else if (IS_ARCHIVE(root[i].attr))
+                print_name(root[i], level);
+        }
+    }
+    else
+    {
+        do
+        {
+            FAT12_DIR sector[512 / sizeof(FAT12_DIR)];
+            fseek(file, 512 * (index + 31), SEEK_SET);
+            fread(sector, 512, 1, file);
+            for (i = 0; i < 512 / sizeof(FAT12_DIR); i++)
+            {
+                if (IS_SUBDIR(sector[i].attr) && strncmp(sector[i].name, ".", 1))
+                {
+                    print_name(sector[i], level);
+                    list_tree(level + 1, sector[i].fstClus);
+                }
+                else if (IS_ARCHIVE(sector[i].attr))
+                    print_name(sector[i], level);
+            }
+        }
+        while ((index = FAT12GetFATValue(index)) < THRESHOLD);
+    }
 }
 
 void list_secs(int fst) {
@@ -68,7 +119,7 @@ void list_secs(int fst) {
 
 int main(int argc, char * argv[]) {
     FAT12Init();
-    list_root();
+    list_tree(0, 0);
     FAT12DeInit();
     return 0;
 }
