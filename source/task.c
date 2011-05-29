@@ -148,16 +148,16 @@ void task_schedule()
     task_set(_curtsk->next);
 }
 
-int res_init(int c)
+res_t * res_init(int c)
 {
     ENTER_CRITICAL();
     _reslist[_res_p].count = c;
     _reslist[_res_p].waitlist = (tcb_t *)0;
     EXIT_CRITICAL();
-    return _res_p++;
+    return &_reslist[_res_p++];
 }
 
-void res_p(int res)
+void res_p(res_t * res)
 {
     ENTER_CRITICAL();
     /* Save task context for potential schedule */
@@ -168,38 +168,38 @@ void res_p(int res)
     asm "call _task_save";
     asm "mov bx, word [__curtsk]";
     asm "push word 24[bx]";
-    if(--_reslist[res].count < 0)
+    if(--(res->count) < 0)
     {
         /* remove this task from running list
          * put it in the waitlist of res
          */
         tcb_t * tcb = _curtsk;
         _remove_tcb(tcb);
-        if(_reslist[res].waitlist == (tcb_t *)0)
+        if(res->waitlist == (tcb_t *)0)
         {
-            _reslist[res].waitlist = tcb;
+            res->waitlist = tcb;
             tcb->next = 0;
         }
         else
         {
-            tcb->next = _reslist[res].waitlist->next;
-            _reslist[res].waitlist->next = tcb;
+            tcb->next = res->waitlist->next;
+            res->waitlist->next = tcb;
         }
         task_set(_curtsk);
     }
     EXIT_CRITICAL();
 }
 
-void res_v(int res)
+void res_v(res_t * res)
 {
     ENTER_CRITICAL();
-    if(_reslist[res].count++ < 0)
+    if(res->count++ < 0)
     {
         /* put a task in the waitlist
          * to running list
          */
-        tcb_t * tcb = _reslist[res].waitlist;
-        _reslist[res].waitlist = _reslist[res].waitlist->next;
+        tcb_t * tcb = res->waitlist;
+        res->waitlist = res->waitlist->next;
         _add_tcb(tcb);
     }
     EXIT_CRITICAL();

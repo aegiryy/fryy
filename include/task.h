@@ -41,10 +41,10 @@ typedef struct _res_t
     struct _res_t * next;
 } res_t;
 
-int res_init(int c);
-void res_p(int res);
+res_t * res_init(int c);
+void res_p(res_t * res);
 #define P(res) res_p(res)
-void res_v(int res);
+void res_v(res_t * res);
 #define V(res) res_v(res)
 
 #endif

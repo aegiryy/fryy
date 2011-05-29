@@ -3,12 +3,10 @@
 void task1();
 void task2();
 void task3();
-void task_plus();
 static void set_timer(void (*scheduler)());
 static void scheduler();
 
-int res;
-int sum = 0;
+res_t * res;
 
 void main()
 {
@@ -18,19 +16,9 @@ void main()
     task_init(task1, 0x1000);
     task_init(task2, 0x1000);
     task_init(task3, 0x1000);
-    //task_init(task_plus, 0x1000);
-    res = res_init(2);
+    res = res_init(1);
     set_timer(task_schedule);
     task_set(task_get());
-}
-
-void task_plus()
-{
-    int i;
-    for (i = 0; i < 101; i++)
-        sum += i;
-    print(sum);
-    task_deinit(task_get());
 }
 
 void task1()
