@@ -1,5 +1,7 @@
 #include "io.h"
 
+static int _mod(int a, int b);
+
 void putc(char c)
 {
     c = c;
@@ -20,4 +22,25 @@ void puts(char * s)
         putc(*s);
         s++;
     }
+}
+
+void print(int n)
+{
+    char bit[10];
+    char p = 0;
+    while (n > 0)
+    {
+        bit[p++] = _mod(n, 10);
+        n /= 10;
+    }
+    while (p--)
+    {
+        putc('0' + bit[p]);
+    }
+}
+
+static int _mod(int a, int b)
+{
+    int c = a / b;
+    return a - b * c;
 }
