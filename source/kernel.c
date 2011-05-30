@@ -16,7 +16,7 @@ void main()
     task_init(task1, 0x1000);
     task_init(task2, 0x1000);
     task_init(task3, 0x1000);
-    res = res_init(1);
+    res = res_init(2);
     set_timer(task_schedule);
     task_set(task_get());
 }

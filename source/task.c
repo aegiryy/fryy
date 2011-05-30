@@ -41,20 +41,19 @@ tcb_t * task_init(void (*task)(), int cs)
 
 void task_deinit(tcb_t * tcb)
 {
-    ENTER_CRITICAL();
-    int is_curtsk = (tcb == _curtsk);
+    asm "pop ax";
+    asm "pushf"; /* INTR should be open */
+    asm "push cs";
+    asm "push ax";
+    asm "call _task_save";
+    asm "mov bx, word [__curtsk]";
+    asm "push word 24[bx]";
     _remove_tcb(tcb);
     tcb->next = _header->next;
     _header->next = tcb;
     if(_curtsk != (tcb_t *)0)
     {
-        if (is_curtsk)
-            task_set(_curtsk);
-        else
-        {
-            EXIT_CRITICAL();
-            return;
-        }
+        task_set(_curtsk);
     }
     else
     {
@@ -131,7 +130,6 @@ void task_save() {
     asm "mov word 8[bx], sp";
 
     asm "push ax";
-    EXIT_CRITICAL();
 }
 
 tcb_t * task_get() {
@@ -159,12 +157,12 @@ res_t * res_init(int c)
 
 void res_p(res_t * res)
 {
-    ENTER_CRITICAL();
     /* Save task context for potential schedule */
     asm "pop ax";
-    asm "pushf";
+    asm "pushf"; /* INTR should be open */
     asm "push cs";
     asm "push ax";
+    ENTER_CRITICAL();
     asm "call _task_save";
     asm "mov bx, word [__curtsk]";
     asm "push word 24[bx]";
