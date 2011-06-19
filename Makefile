@@ -20,8 +20,11 @@ task.o: $(SRC)/task.c $(INC)/task.h
 io.o: $(SRC)/io.c $(INC)/io.h
 	$(CC) $(CFLAGS) $(SRC)/io.c -o $@
 
-os.bin: kernel.o task.o io.o
-	$(LD) -d -M kernel.o task.o io.o -o $@
+shell.o: $(SRC)/shell.c $(INC)/shell.h
+	$(CC) $(CFLAGS) $(SRC)/shell.c -o $@
+
+os.bin: kernel.o task.o io.o shell.o
+	$(LD) -d -M kernel.o task.o io.o shell.o -L/usr/lib/bcc/ -lc -o $@
 
 clean:
 	rm -f boot.img

@@ -27,6 +27,8 @@ typedef struct _tcb_t
 tcb_t * task_init(void (*task)(), int cs);
 /* Set current task */
 void task_set(tcb_t * tcb);
+/* Save current task */
+void task_save();
 /* Get current task */
 tcb_t * task_get();
 /* Deinitialize a task, resources would be recycled */

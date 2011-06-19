@@ -15,6 +15,15 @@ void putc(char c)
     asm "pop ax";
 }
 
+char getc()
+{
+    char c = 'x';
+    asm "mov ah, #0";
+    asm "int 0x16";
+    asm "mov -5[bp], al";
+    return c;
+}
+
 void puts(char * s)
 {
     while(*s)

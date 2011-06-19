@@ -46,7 +46,7 @@ void task_deinit(tcb_t * tcb)
     asm "push cs";
     asm "push ax";
     asm "call _task_save";
-    asm "mov bx, word [__curtsk]";
+    asm "mov bx, word [__curtsk]"; /* push RETURN ADDRESS */
     asm "push word 24[bx]";
     _remove_tcb(tcb);
     tcb->next = _header->next;

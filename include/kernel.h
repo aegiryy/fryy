@@ -4,5 +4,6 @@
 #include "cpu.h"
 #include "config.h"
 #include "task.h"
+#include "shell.h"
 
 #endif
