@@ -42,9 +42,11 @@ ROADMAP:
                 -M:     print organization
                 -o:     target file
             See manuals for details of bcc, as86, ld86.
-    b)  Write OS
-        Now, a very simple process management system is implemented. See
-        os.c for details.
+    b)  Build a simple process management system
+            * Task scheduling subsystem (supporting multiprocesses)
+            * A basic IPC subsystem (PV operators && resources)
+    c)  Write a simple SHELL process dealing with I/O
+        TIPS: Library functions (e.g. strcmp) can be linked to target image
 ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
