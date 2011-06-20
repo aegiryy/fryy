@@ -23,8 +23,14 @@ io.o: $(SRC)/io.c $(INC)/io.h
 shell.o: $(SRC)/shell.c $(INC)/shell.h
 	$(CC) $(CFLAGS) $(SRC)/shell.c -o $@
 
-os.bin: kernel.o task.o io.o shell.o
-	$(LD) -d -M kernel.o task.o io.o shell.o -L/usr/lib/bcc/ -lc -o $@
+filesystem.o: $(SRC)/filesystem.c $(INC)/filesystem.h
+	$(CC) $(CFLAGS) $(SRC)/filesystem.c -o $@
+
+fat12.o: $(SRC)/fat12.c $(INC)/fat12.h
+	$(CC) $(CFLAGS) $(SRC)/fat12.c -o $@
+
+os.bin: kernel.o task.o io.o shell.o filesystem.o fat12.o
+	$(LD) -d -M kernel.o task.o io.o shell.o filesystem.o fat12.o -L/usr/lib/bcc/ -lc -o $@
 
 clean:
 	rm -f boot.img
