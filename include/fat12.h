@@ -16,13 +16,14 @@ typedef struct {
 #pragma pack()
 
 #define PHYSICAL_SECTOR(fstClus) (31+(fstClus))
-#define IS_FREE(entry) ((entry).name[0] == 0xE5 || (entry).name[0] == 0x00)
-#define IS_ROOT(entry) ((entry).fstClus == 0)
-#define ATTR_READONLY(entry) ((entry).attr & 0x01)
-#define ATTR_HIDDEN(entry) ((entry).attr & 0x02)
-#define ATTR_SYSTEM(entry) ((entry).attr & 0x04)
-#define ATTR_DIRECTORY(entry) ((entry).attr & 0x10)
-#define ATTR_ARCHIVE(entry) ((entry).attr & 0x20)
+#define IS_FREE(entry) ((entry)->name[0] == 0xE5 || (entry)->name[0] == 0x00)
+#define IS_ROOT(entry) ((entry)->fstClus == 0)
+#define ATTR_READONLY(entry) ((entry)->attr & 0x01)
+#define ATTR_HIDDEN(entry) ((entry)->attr & 0x02)
+#define ATTR_SYSTEM(entry) ((entry)->attr & 0x04)
+#define ATTR_DIRECTORY(entry) ((entry)->attr & 0x10)
+#define ATTR_ARCHIVE(entry) ((entry)->attr & 0x20)
 int fat_value(int fstClus);
+int fat_walkthrough(fat_entry_t * dir, int (*handler)(fat_entry_t * entry));
 
 #endif

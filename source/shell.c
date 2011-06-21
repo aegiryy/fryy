@@ -1,7 +1,6 @@
 #include "shell.h"
 #define BEGIN_CMD() int task_func = _task_func
 #define END_CMD() if (task_func == 0) task_deinit(task_get()); else return
-#define PARAMETER(cmd_length) (buffer[(cmd_length)+1])
 
 static int _task_func = 0;
 static fat_entry_t cd;
@@ -15,9 +14,8 @@ static int handler_dir(fat_entry_t * entry);
 static void cmd_cat();
 static int handler_cat(fat_entry_t * entry);
 static void (*find_procedure(char * cmd))();
-static char sector[SECTOR_SIZE];
 static void catfile(fat_entry_t * entry);
-static int go_through_directory(fat_entry_t * dir, void (*handler)(fat_entry_t * sector));
+extern char sector[SECTOR_SIZE];
 
 void shell()
 {
@@ -109,14 +107,14 @@ static void cmd_exit()
 static void cmd_dir()
 {
     BEGIN_CMD();
-    go_through_directory(&cd, handler_dir);
+    fat_walkthrough(&cd, handler_dir);
     END_CMD();
 }
 static int handler_dir(fat_entry_t * entry)
 {
-    if (IS_FREE(*entry))
+    if (IS_FREE(entry))
         return 0;
-    if (ATTR_DIRECTORY(*entry) || ATTR_ARCHIVE(*entry))
+    if (ATTR_DIRECTORY(entry) || ATTR_ARCHIVE(entry))
     {
         puts(entry->name);
         ENTER();
@@ -127,7 +125,7 @@ static int handler_dir(fat_entry_t * entry)
 static void cmd_cd()
 {
     BEGIN_CMD();
-    if (go_through_directory(&cd, handler_cd))
+    if (fat_walkthrough(&cd, handler_cd))
         END_CMD();
     puts("No such directory!");
     ENTER();
@@ -135,9 +133,9 @@ static void cmd_cd()
 }
 static int handler_cd(fat_entry_t * entry)
 {
-    if (IS_FREE(*entry))
+    if (IS_FREE(entry))
         return 0;
-    if (ATTR_DIRECTORY(*entry) || ATTR_ARCHIVE(*entry))
+    if (ATTR_DIRECTORY(entry) || ATTR_ARCHIVE(entry))
         if (strncmp(entry->name, buffer+3, strlen(buffer+3)) == 0)
         {
             cd = *entry;
@@ -149,7 +147,7 @@ static int handler_cd(fat_entry_t * entry)
 static void cmd_cat()
 {
     BEGIN_CMD();
-    if (go_through_directory(&cd, handler_cat))
+    if (fat_walkthrough(&cd, handler_cat))
         END_CMD();
     puts("No such file!");
     ENTER();
@@ -157,9 +155,9 @@ static void cmd_cat()
 }
 static int handler_cat(fat_entry_t * entry)
 {
-    if (IS_FREE(*entry))
+    if (IS_FREE(entry))
         return 0;
-    if (ATTR_DIRECTORY(*entry) || ATTR_ARCHIVE(*entry))
+    if (ATTR_DIRECTORY(entry) || ATTR_ARCHIVE(entry))
         if (strncmp(entry->name, buffer+4, strlen(buffer+4)) == 0)
         {
             catfile(entry);
@@ -185,32 +183,4 @@ static void catfile(fat_entry_t * entry)
             putc(sector[i]);
         size -= upper;
     } while (clus < THRESHOLD);
-}
-
-static int go_through_directory(fat_entry_t * dir, int (*handler)(fat_entry_t * sector))
-{
-    int i, j;
-    if (IS_ROOT(*dir))
-    {
-        for (i = 19; i < 33; i++)
-        {
-            load_sectors(sector, i, 1);
-            for (j = 0; j < SECTOR_SIZE / sizeof(fat_entry_t); j++)
-                if (handler(((fat_entry_t *)sector)+j))
-                    return 1;
-        }
-    }
-    else
-    {
-        int clus = dir->fstClus;
-        do
-        {
-            load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
-            clus = fat_value(clus);
-            for (j = 0; j < SECTOR_SIZE / sizeof(fat_entry_t); j++)
-                if (handler(((fat_entry_t *)sector)+j))
-                    return 1;
-        } while (clus < THRESHOLD);
-    }
-    return 0;
 }
