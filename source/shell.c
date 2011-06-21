@@ -1,16 +1,24 @@
 #include "shell.h"
-#include "io.h"
-#include <strings.h>
+#define BEGIN_CMD() int task_func = _task_func
+#define END_CMD() if (task_func == 0) task_deinit(task_get()); else return
+#define PARAMETER(cmd_length) (buffer[(cmd_length)+1])
 
 static int _task_func = 0;
+static fat_entry_t cd;
 static char buffer[BUFSZ];
 static void cmd_echo();
 static void cmd_exit();
+static void cmd_cd();
+static void cmd_dir();
 static void (*find_procedure(char * cmd))();
+static char sector[SECTOR_SIZE];
+static fat_entry_t * lookup_fat_entry(fat_entry_t * entry);
+static void display_fat_entry(fat_entry_t * entry);
 
 void shell()
 {
     char c;
+    cd.fstClus = 0;
     while (1)
     {
         int p = 0;
@@ -70,22 +78,126 @@ static void (*find_procedure(char * cmd))()
         return cmd_echo;
     if (strncmp("exit", buffer, 4) == 0)
         return cmd_exit;
-    else
-        return 0;
+    if (strncmp("dir", buffer, 3) == 0)
+        return cmd_dir;
+    if (strncmp("cd", buffer, 2) == 0)
+        return cmd_cd;
+    return 0;
 }
 
 static void cmd_echo()
 {
     int i;
-    int task_func = _task_func;
+    BEGIN_CMD();
     for(i = 5; buffer[i] != '\0'; i++)
         putc(buffer[i]);
     ENTER();
-    if (task_func == 0)
-        task_deinit(task_get());
+    END_CMD();
 }
 
 static void cmd_exit()
 {
     task_deinit(task_get());
+}
+
+static void cmd_dir()
+{
+    int i;
+    int j;
+    BEGIN_CMD();
+    if (IS_ROOT(cd))
+    {
+        for (i = 19; i < 33; i++)
+        {
+            fat_entry_t * ent;
+            load_sectors(sector, i, 1);
+            display_fat_entry(sector);
+        }
+    }
+    else
+    {
+        int clus = cd.fstClus;
+        do
+        {
+            int i;
+            fat_entry_t * ent;
+            load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
+            clus = fat_value(clus);
+            display_fat_entry(sector);
+        } while (clus < THRESHOLD);
+    }
+    END_CMD();
+}
+
+static void cmd_cd()
+{
+    int i, j;
+    BEGIN_CMD();
+    if (IS_ROOT(cd))
+    {
+        for (i = 19; i < 33; i++)
+        {
+            fat_entry_t * ent;
+            load_sectors(sector, i, 1);
+            if (ent = lookup_fat_entry(sector, buffer+3))
+            {
+                cd = *ent;
+                END_CMD();
+            }
+        }
+    }
+    else
+    {
+        int clus = cd.fstClus;
+        do
+        {
+            int j;
+            fat_entry_t * ent;
+            load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
+            clus = fat_value(clus);
+            if (ent = lookup_fat_entry(sector, buffer+3))
+            {
+                cd = *ent;
+                END_CMD();
+            }
+        } while (clus < THRESHOLD);
+    }
+    puts("No such directory!");
+    ENTER();
+    END_CMD();
+}
+
+static fat_entry_t * lookup_fat_entry(fat_entry_t * ent, char * filename)
+{
+    int j;
+    for (j = 0; j < SECTOR_SIZE / sizeof(fat_entry_t); j++)
+    {
+        if (IS_FREE(ent[j]))
+            continue;
+        if (ATTR_DIRECTORY(ent[j]))
+            if (strncmp(ent[j].name, filename, strlen(filename)) == 0)
+                return ent + j;
+    }
+    return 0;
+}
+
+static void display_fat_entry(fat_entry_t * ent)
+{
+    int i;
+    for (i = 0; i < SECTOR_SIZE / sizeof(fat_entry_t); i++)
+    {
+        ent[i].attr &= 0x7f;
+        if (IS_FREE(ent[i]))
+            continue;
+        if (ATTR_DIRECTORY(ent[i]))
+        {
+            puts(ent[i].name);
+            ENTER();
+        }
+        if (ATTR_ARCHIVE(ent[i]))
+        {
+            puts(ent[i].name);
+            ENTER();
+        }
+    }
 }

@@ -1,17 +1,16 @@
 #include "fat12.h"
 #include "io.h"
-#define THRESHOLD 0xff8
 
-static char fat[512];
+static char sector[SECTOR_SIZE];
 
 int fat_value(int fstClus)
 {
     int byteidx = fstClus * 3 / 2;
     int a, b;
-    load_sectors(fat, byteidx / 512 + 1, 1);
-    byteidx = byteidx % 512;
-    a = fat[byteidx];
-    b = fat[byteidx + 1];
+    load_sectors(sector, byteidx / SECTOR_SIZE + 1, 1);
+    byteidx = byteidx % SECTOR_SIZE;
+    a = sector[byteidx];
+    b = sector[byteidx + 1];
     if (fstClus % 2 == 0)
         return ((b & 0x0f) << 8) | a;
     else

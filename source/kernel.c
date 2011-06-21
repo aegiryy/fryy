@@ -1,8 +1,5 @@
 #include "kernel.h"
 
-void task1();
-void task2();
-void task3();
 void sh();
 void init();
 static void set_timer(void (*scheduler)());
@@ -15,13 +12,11 @@ void main()
     asm "mov ax, cs";
     asm "mov ss, ax";
     asm "mov sp, #0";
-    /*
     task_init(init, 0x1000);
     res = res_init(2);
     set_timer(task_schedule);
     task_set(task_get());
-    */
-    fsdriver();
+    //fsdriver();
     while(1);
 }
 
@@ -29,42 +24,6 @@ void main()
 void init()
 {
     task_init(shell, 0x1000);
-    task_deinit(task_get());
-}
-
-void task1()
-{
-    int s = 0x7fff;
-    P(res);
-    while (s--)
-    {
-        putc('A');
-    }
-    V(res);
-    task_deinit(task_get());
-}
-
-void task2()
-{
-    int s = 0x7fff;
-    P(res);
-    while (s--)
-    {
-        putc('B');
-    }
-    V(res);
-    task_deinit(task_get());
-}
-
-void task3()
-{
-    int s = 0x7fff;
-    P(res);
-    while (s--)
-    {
-        putc('C');
-    }
-    V(res);
     task_deinit(task_get());
 }
 

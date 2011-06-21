@@ -8,6 +8,4 @@ typedef struct _file_t
     int filesize[2];
 } file_t;
 
-void fsdriver();
-
 #endif
