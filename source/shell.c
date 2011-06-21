@@ -10,10 +10,12 @@ static void cmd_echo();
 static void cmd_exit();
 static void cmd_cd();
 static void cmd_dir();
+static void cmd_cat();
 static void (*find_procedure(char * cmd))();
 static char sector[SECTOR_SIZE];
 static fat_entry_t * lookup_fat_entry(fat_entry_t * entry);
 static void display_fat_entry(fat_entry_t * entry);
+static void catfile(fat_entry_t * entry);
 
 void shell()
 {
@@ -82,6 +84,8 @@ static void (*find_procedure(char * cmd))()
         return cmd_dir;
     if (strncmp("cd", buffer, 2) == 0)
         return cmd_cd;
+    if (strncmp("cat", buffer, 3) == 0)
+        return cmd_cat;
     return 0;
 }
 
@@ -131,7 +135,7 @@ static void cmd_dir()
 
 static void cmd_cd()
 {
-    int i, j;
+    int i;
     BEGIN_CMD();
     if (IS_ROOT(cd))
     {
@@ -151,7 +155,6 @@ static void cmd_cd()
         int clus = cd.fstClus;
         do
         {
-            int j;
             fat_entry_t * ent;
             load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
             clus = fat_value(clus);
@@ -167,6 +170,46 @@ static void cmd_cd()
     END_CMD();
 }
 
+static void cmd_cat()
+{
+    int i;
+    BEGIN_CMD();
+    if (IS_ROOT(cd))
+    {
+        for (i = 19; i < 33; i++)
+        {
+            fat_entry_t * ent;
+            load_sectors(sector, i, 1);
+            if (ent = lookup_fat_entry(sector, buffer+4))
+            {
+                catfile(ent);
+                ENTER();
+                END_CMD();
+            }
+        }
+    }
+    else
+    {
+        int clus = cd.fstClus;
+        do
+        {
+            fat_entry_t * ent;
+            load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
+            clus = fat_value(clus);
+            if (ent = lookup_fat_entry(sector, buffer+4))
+            {
+                catfile(ent);
+                ENTER();
+                END_CMD();
+            }
+        } while (clus < THRESHOLD);
+    }
+    puts("No such file!");
+    ENTER();
+    END_CMD();
+
+}
+
 static fat_entry_t * lookup_fat_entry(fat_entry_t * ent, char * filename)
 {
     int j;
@@ -174,7 +217,7 @@ static fat_entry_t * lookup_fat_entry(fat_entry_t * ent, char * filename)
     {
         if (IS_FREE(ent[j]))
             continue;
-        if (ATTR_DIRECTORY(ent[j]))
+        if (ATTR_DIRECTORY(ent[j]) || ATTR_ARCHIVE(ent[j]))
             if (strncmp(ent[j].name, filename, strlen(filename)) == 0)
                 return ent + j;
     }
@@ -200,4 +243,23 @@ static void display_fat_entry(fat_entry_t * ent)
             ENTER();
         }
     }
+}
+
+static void catfile(fat_entry_t * ent)
+{
+    int clus = ent->fstClus;
+    int size = ent->filesize[0];
+    if (size == 0)
+        return;
+    do
+    {
+        int i;
+        int upper = size > SECTOR_SIZE? SECTOR_SIZE: size;
+        fat_entry_t * ent;
+        load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
+        clus = fat_value(clus);
+        for (i = 0; i < upper; i++)
+            putc(sector[i]);
+        size -= upper;
+    } while (clus < THRESHOLD);
 }
