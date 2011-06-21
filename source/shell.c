@@ -9,13 +9,15 @@ static char buffer[BUFSZ];
 static void cmd_echo();
 static void cmd_exit();
 static void cmd_cd();
+static int handler_cd(fat_entry_t * entry);
 static void cmd_dir();
+static int handler_dir(fat_entry_t * entry);
 static void cmd_cat();
+static int handler_cat(fat_entry_t * entry);
 static void (*find_procedure(char * cmd))();
 static char sector[SECTOR_SIZE];
-static fat_entry_t * lookup_fat_entry(fat_entry_t * entry);
-static void display_fat_entry(fat_entry_t * entry);
 static void catfile(fat_entry_t * entry);
+static int go_through_directory(fat_entry_t * dir, void (*handler)(fat_entry_t * sector));
 
 void shell()
 {
@@ -106,160 +108,109 @@ static void cmd_exit()
 
 static void cmd_dir()
 {
-    int i;
-    int j;
     BEGIN_CMD();
-    if (IS_ROOT(cd))
-    {
-        for (i = 19; i < 33; i++)
-        {
-            fat_entry_t * ent;
-            load_sectors(sector, i, 1);
-            display_fat_entry(sector);
-        }
-    }
-    else
-    {
-        int clus = cd.fstClus;
-        do
-        {
-            int i;
-            fat_entry_t * ent;
-            load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
-            clus = fat_value(clus);
-            display_fat_entry(sector);
-        } while (clus < THRESHOLD);
-    }
+    go_through_directory(&cd, handler_dir);
     END_CMD();
 }
-
-static void cmd_cd()
+static int handler_dir(fat_entry_t * entry)
 {
-    int i;
-    BEGIN_CMD();
-    if (IS_ROOT(cd))
+    if (IS_FREE(*entry))
+        return 0;
+    if (ATTR_DIRECTORY(*entry) || ATTR_ARCHIVE(*entry))
     {
-        for (i = 19; i < 33; i++)
-        {
-            fat_entry_t * ent;
-            load_sectors(sector, i, 1);
-            if (ent = lookup_fat_entry(sector, buffer+3))
-            {
-                cd = *ent;
-                END_CMD();
-            }
-        }
-    }
-    else
-    {
-        int clus = cd.fstClus;
-        do
-        {
-            fat_entry_t * ent;
-            load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
-            clus = fat_value(clus);
-            if (ent = lookup_fat_entry(sector, buffer+3))
-            {
-                cd = *ent;
-                END_CMD();
-            }
-        } while (clus < THRESHOLD);
-    }
-    puts("No such directory!");
-    ENTER();
-    END_CMD();
-}
-
-static void cmd_cat()
-{
-    int i;
-    BEGIN_CMD();
-    if (IS_ROOT(cd))
-    {
-        for (i = 19; i < 33; i++)
-        {
-            fat_entry_t * ent;
-            load_sectors(sector, i, 1);
-            if (ent = lookup_fat_entry(sector, buffer+4))
-            {
-                catfile(ent);
-                ENTER();
-                END_CMD();
-            }
-        }
-    }
-    else
-    {
-        int clus = cd.fstClus;
-        do
-        {
-            fat_entry_t * ent;
-            load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
-            clus = fat_value(clus);
-            if (ent = lookup_fat_entry(sector, buffer+4))
-            {
-                catfile(ent);
-                ENTER();
-                END_CMD();
-            }
-        } while (clus < THRESHOLD);
-    }
-    puts("No such file!");
-    ENTER();
-    END_CMD();
-
-}
-
-static fat_entry_t * lookup_fat_entry(fat_entry_t * ent, char * filename)
-{
-    int j;
-    for (j = 0; j < SECTOR_SIZE / sizeof(fat_entry_t); j++)
-    {
-        if (IS_FREE(ent[j]))
-            continue;
-        if (ATTR_DIRECTORY(ent[j]) || ATTR_ARCHIVE(ent[j]))
-            if (strncmp(ent[j].name, filename, strlen(filename)) == 0)
-                return ent + j;
+        puts(entry->name);
+        ENTER();
     }
     return 0;
 }
 
-static void display_fat_entry(fat_entry_t * ent)
+static void cmd_cd()
 {
-    int i;
-    for (i = 0; i < SECTOR_SIZE / sizeof(fat_entry_t); i++)
-    {
-        ent[i].attr &= 0x7f;
-        if (IS_FREE(ent[i]))
-            continue;
-        if (ATTR_DIRECTORY(ent[i]))
+    BEGIN_CMD();
+    if (go_through_directory(&cd, handler_cd))
+        END_CMD();
+    puts("No such directory!");
+    ENTER();
+    END_CMD();
+}
+static int handler_cd(fat_entry_t * entry)
+{
+    if (IS_FREE(*entry))
+        return 0;
+    if (ATTR_DIRECTORY(*entry) || ATTR_ARCHIVE(*entry))
+        if (strncmp(entry->name, buffer+3, strlen(buffer+3)) == 0)
         {
-            puts(ent[i].name);
-            ENTER();
+            cd = *entry;
+            return 1;
         }
-        if (ATTR_ARCHIVE(ent[i]))
-        {
-            puts(ent[i].name);
-            ENTER();
-        }
-    }
+    return 0;
 }
 
-static void catfile(fat_entry_t * ent)
+static void cmd_cat()
 {
-    int clus = ent->fstClus;
-    int size = ent->filesize[0];
+    BEGIN_CMD();
+    if (go_through_directory(&cd, handler_cat))
+        END_CMD();
+    puts("No such file!");
+    ENTER();
+    END_CMD();
+}
+static int handler_cat(fat_entry_t * entry)
+{
+    if (IS_FREE(*entry))
+        return 0;
+    if (ATTR_DIRECTORY(*entry) || ATTR_ARCHIVE(*entry))
+        if (strncmp(entry->name, buffer+4, strlen(buffer+4)) == 0)
+        {
+            catfile(entry);
+            ENTER();
+            return 1;
+        }
+    return 0;
+}
+
+static void catfile(fat_entry_t * entry)
+{
+    int clus = entry->fstClus;
+    int size = entry->filesize[0];
     if (size == 0)
         return;
     do
     {
         int i;
         int upper = size > SECTOR_SIZE? SECTOR_SIZE: size;
-        fat_entry_t * ent;
         load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
         clus = fat_value(clus);
         for (i = 0; i < upper; i++)
             putc(sector[i]);
         size -= upper;
     } while (clus < THRESHOLD);
+}
+
+static int go_through_directory(fat_entry_t * dir, int (*handler)(fat_entry_t * sector))
+{
+    int i, j;
+    if (IS_ROOT(*dir))
+    {
+        for (i = 19; i < 33; i++)
+        {
+            load_sectors(sector, i, 1);
+            for (j = 0; j < SECTOR_SIZE / sizeof(fat_entry_t); j++)
+                if (handler(((fat_entry_t *)sector)+j))
+                    return 1;
+        }
+    }
+    else
+    {
+        int clus = dir->fstClus;
+        do
+        {
+            load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
+            clus = fat_value(clus);
+            for (j = 0; j < SECTOR_SIZE / sizeof(fat_entry_t); j++)
+                if (handler(((fat_entry_t *)sector)+j))
+                    return 1;
+        } while (clus < THRESHOLD);
+    }
+    return 0;
 }
