@@ -8,13 +8,13 @@ static char buffer[BUFSZ];
 static void cmd_echo();
 static void cmd_exit();
 static void cmd_cd();
-static int handler_cd(fat_entry_t * entry);
+static int ehandler_cd(fat_entry_t * entry);
 static void cmd_dir();
-static int handler_dir(fat_entry_t * entry);
+static int ehandler_dir(fat_entry_t * entry);
 static void cmd_cat();
-static int handler_cat(fat_entry_t * entry);
+static int ehandler_cat(fat_entry_t * entry);
+static int shandler_cat(char * sector, int length);
 static void (*find_procedure(char * cmd))();
-static void catfile(fat_entry_t * entry);
 extern char sector[SECTOR_SIZE];
 
 void shell()
@@ -107,10 +107,10 @@ static void cmd_exit()
 static void cmd_dir()
 {
     BEGIN_CMD();
-    fat_walkthrough(&cd, handler_dir);
+    fat_dir_read(&cd, ehandler_dir);
     END_CMD();
 }
-static int handler_dir(fat_entry_t * entry)
+static int ehandler_dir(fat_entry_t * entry)
 {
     if (IS_FREE(entry))
         return 0;
@@ -125,13 +125,13 @@ static int handler_dir(fat_entry_t * entry)
 static void cmd_cd()
 {
     BEGIN_CMD();
-    if (fat_walkthrough(&cd, handler_cd))
+    if (fat_dir_read(&cd, ehandler_cd))
         END_CMD();
     puts("No such directory!");
     ENTER();
     END_CMD();
 }
-static int handler_cd(fat_entry_t * entry)
+static int ehandler_cd(fat_entry_t * entry)
 {
     if (IS_FREE(entry))
         return 0;
@@ -147,40 +147,30 @@ static int handler_cd(fat_entry_t * entry)
 static void cmd_cat()
 {
     BEGIN_CMD();
-    if (fat_walkthrough(&cd, handler_cat))
+    if (fat_dir_read(&cd, ehandler_cat))
         END_CMD();
     puts("No such file!");
     ENTER();
     END_CMD();
 }
-static int handler_cat(fat_entry_t * entry)
+static int ehandler_cat(fat_entry_t * entry)
 {
     if (IS_FREE(entry))
         return 0;
     if (ATTR_DIRECTORY(entry) || ATTR_ARCHIVE(entry))
         if (strncmp(entry->name, buffer+4, strlen(buffer+4)) == 0)
         {
-            catfile(entry);
+            fat_file_read(entry, shandler_cat);
             ENTER();
             return 1;
         }
     return 0;
 }
 
-static void catfile(fat_entry_t * entry)
+static int shandler_cat(char * sector, int length)
 {
-    int clus = entry->fstClus;
-    int size = entry->filesize[0];
-    if (size == 0)
-        return;
-    do
-    {
-        int i;
-        int upper = size > SECTOR_SIZE? SECTOR_SIZE: size;
-        load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
-        clus = fat_value(clus);
-        for (i = 0; i < upper; i++)
-            putc(sector[i]);
-        size -= upper;
-    } while (clus < THRESHOLD);
+    int i;
+    for (i = 0; i < length; i++)
+        putc(sector[i]);
+    return 0;
 }

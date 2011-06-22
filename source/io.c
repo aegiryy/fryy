@@ -1,7 +1,5 @@
 #include "io.h"
 
-static int _mod(int a, int b);
-
 void putc(char c)
 {
     c = c;
@@ -39,7 +37,7 @@ void print(int n)
     char p = 0;
     while (n > 0)
     {
-        bit[p++] = _mod(n, 10);
+        bit[p++] = n % 10;
         n /= 10;
     }
     while (p--)
@@ -70,10 +68,4 @@ void load_sectors(char * addr, int sector_no, char count)
     asm "mov al, 8[bp]";
     asm "int 0x13";
     asm "jc _load_sectors_redo";
-}
-
-static int _mod(int a, int b)
-{
-    int c = a / b;
-    return a - b * c;
 }

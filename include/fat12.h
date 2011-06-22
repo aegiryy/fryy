@@ -15,6 +15,10 @@ typedef struct {
 } fat_entry_t;
 #pragma pack()
 
+/* return 1 if handler wannna stop */
+typedef int (*fat_entry_handler_t)(fat_entry_t * entry);
+typedef int (*fat_sector_handler_t)(char * sector, int length);
+
 #define PHYSICAL_SECTOR(fstClus) (31+(fstClus))
 #define IS_FREE(entry) ((entry)->name[0] == 0xE5 || (entry)->name[0] == 0x00)
 #define IS_ROOT(entry) ((entry)->fstClus == 0)
@@ -23,7 +27,7 @@ typedef struct {
 #define ATTR_SYSTEM(entry) ((entry)->attr & 0x04)
 #define ATTR_DIRECTORY(entry) ((entry)->attr & 0x10)
 #define ATTR_ARCHIVE(entry) ((entry)->attr & 0x20)
-int fat_value(int fstClus);
-int fat_walkthrough(fat_entry_t * dir, int (*handler)(fat_entry_t * entry));
+int fat_dir_traverse(fat_entry_t * dir, fat_entry_handler_t ehandler);
+int fat_file_traverse(fat_entry_t * entry, fat_sector_handler_t shandler);
 
 #endif
