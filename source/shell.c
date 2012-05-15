@@ -15,6 +15,7 @@ static void cmd_cat();
 static int ehandler_cat(fat_entry_t * entry);
 static int shandler_cat(char * sector, int length);
 static void (*find_procedure(char * cmd))();
+static void cmd_print();
 extern char sector[SECTOR_SIZE];
 
 void shell()
@@ -86,6 +87,8 @@ static void (*find_procedure(char * cmd))()
         return cmd_cd;
     if (strncmp("cat", buffer, 3) == 0)
         return cmd_cat;
+    if (strncmp("print", buffer, 5) == 0)
+        return cmd_print;
     return 0;
 }
 
@@ -101,7 +104,11 @@ static void cmd_echo()
 
 static void cmd_exit()
 {
-    task_deinit(task_get());
+    /* Kill tasks other than shell 
+     * excepts there only be the shell
+     * task
+     */
+    task_deinit(task_get()->next);
 }
 
 static void cmd_dir()
@@ -173,4 +180,13 @@ static int shandler_cat(char * sector, int length)
     for (i = 0; i < length; i++)
         putc(sector[i]);
     return 0;
+}
+
+static void cmd_print()
+{
+    BEGIN_CMD();
+    char c = *(buffer + 6);
+    while (1)
+        putc(c);
+    END_CMD();
 }

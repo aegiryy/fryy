@@ -1,6 +1,6 @@
 #!/bin/sh
 
-mkdir floppy
+mkdir ./floppy
 mount -o loop boot.img ./floppy/
 cp os.bin ./floppy/
 umount ./floppy/

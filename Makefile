@@ -33,6 +33,5 @@ os.bin: kernel.o task.o io.o shell.o filesystem.o fat12.o
 	$(LD) -d -M kernel.o task.o io.o shell.o filesystem.o fat12.o -L/usr/lib/bcc/ -lc -o $@
 
 clean:
-	rm -f boot.img
 	rm -f os.bin
 	rm -f *.o

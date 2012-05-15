@@ -3,6 +3,8 @@
 
 #define THRESHOLD 0xff8
 #define SECTOR_SIZE 512
+
+/* #pragma would prevent alignment */
 #pragma pack(1)
 typedef struct {
     char name[0xB];
