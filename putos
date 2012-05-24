@@ -1,5 +1,7 @@
 #!/bin/sh
 
-mount -o loop boot.img /mnt/floppy/
-cp os.bin /mnt/floppy/
-umount /mnt/floppy/
+mkdir ./floppy
+mount -o loop boot.img ./floppy/
+cp os.bin ./floppy/
+umount ./floppy/
+rmdir floppy

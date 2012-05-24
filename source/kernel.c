@@ -1,60 +1,30 @@
 #include "kernel.h"
 
-void task1();
-void task2();
-void task3();
+void sh();
+void init();
 static void set_timer(void (*scheduler)());
 static void scheduler();
 
-int res;
+res_t * res;
 
 void main()
 {
     asm "mov ax, cs";
-    asm "mov sp, ax";
-    task_init(task1, 0x1000, 0x0202);
-    task_init(task2, 0x1000, 0x0202);
-    task_init(task3, 0x1000, 0x0202);
+    asm "mov ss, ax";
+    asm "mov sp, #0";
+    task_init(init, 0x1000);
     res = res_init(2);
-    set_timer(scheduler);
-    task_set(curtsk);
+    set_timer(task_schedule);
+    task_set(task_get());
+    //fsdriver();
+    while(1);
 }
 
-
-void task1()
+/* root task */
+void init()
 {
-    int s = 0x7fff;
-    P(res);
-    while(--s)
-    {
-        putc('A');
-    }
-    V(res);
-    task_deinit();
-}
-
-void task2()
-{
-    int s = 0x7fff;
-    P(res);
-    while(--s)
-    {
-        putc('B');
-    }
-    V(res);
-    task_deinit();
-}
-
-void task3()
-{
-    int s = 0x7fff;
-    P(res);
-    while(--s)
-    {
-        putc('C');
-    }
-    V(res);
-    task_deinit();
+    task_init(shell, 0x1000);
+    task_deinit(task_get());
 }
 
 void set_timer(void (*scheduler)())
@@ -67,39 +37,4 @@ void set_timer(void (*scheduler)())
     asm "mov word [0x08 * 4], ax";
     asm "mov word [0x08 * 4 + 2], cs";
     asm "pop ds";
-}
-
-void scheduler(int cs, int flag)
-{
-    asm "push ax";
-    asm "push bx";
-    asm "push cx";
-    asm "push dx";
-    asm "push bp";
-    /* SP should be saved seperatly */
-    asm "push si";
-    asm "push di";
-    asm "push ds";
-    asm "push ss";
-    asm "push es";
-    asm "mov bx, word [_curtsk]";
-    asm "pop word 22[bx]";
-    asm "pop word 20[bx]";
-    asm "pop word 18[bx]";
-    asm "pop word 14[bx]";
-    asm "pop word 12[bx]";
-    asm "pop word 10[bx]";
-    asm "pop word 6[bx]";
-    asm "pop word 4[bx]";
-    asm "pop word 2[bx]";
-    asm "pop word [bx]";
-    asm "pop word 24[bx]";
-    asm "pop word 16[bx]";
-    asm "pop word 26[bx]";
-    asm "mov word 8[bx], sp";
-    /* Context of previous process is saved */
-
-    asm "mov al, #0x20";
-    asm "out #0x20, al";
-    task_set(curtsk->next);
 }

@@ -44,6 +44,7 @@ void FAT12PrintFile(FAT12_DIR entry) {
     printf("DIR_WRTTIME: %d\n", entry.wrtTime);
     printf("DIR_FSTCLUS: %d\n", entry.fstClus);
     printf("DIR_FILESIZE: %d\n", entry.fileSize);
+    printf("Magic Number: %d\n", (int)entry.name[0]);
 }
 
 void FAT12List(char * path) {

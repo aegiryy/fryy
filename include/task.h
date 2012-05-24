@@ -1,3 +1,10 @@
+/* FEATURES:
+ *      Task initialization
+ *      Task ending
+ *      Set current task
+ *      Resource management
+ */
+
 #ifndef _TASK_H
 #define _TASK_H
 
@@ -16,21 +23,30 @@ typedef struct _tcb_t
     char stk[STKSZ];
 } tcb_t;
 
+/* Initialize a task, FLAG = 0x0202 */
+tcb_t * task_init(void (*task)(), int cs);
+/* Set current task */
+void task_set(tcb_t * tcb);
+/* Save current task */
+void task_save();
+/* Get current task */
+tcb_t * task_get();
+/* Deinitialize a task, resources would be recycled */
+void task_deinit(tcb_t * tcb);
+/* Core scheduler */
+void task_schedule();
+
 typedef struct _res_t
 {
     int count;
     tcb_t * waitlist;
+    struct _res_t * next;
 } res_t;
 
-tcb_t * curtsk; /* current task */
-
-tcb_t * task_init(void (*task)(), int cs, int flag);
-void task_set(tcb_t * tcb);
-void task_deinit();
-int res_init(int c);
-void res_p(int res);
+res_t * res_init(int c);
+void res_p(res_t * res);
 #define P(res) res_p(res)
-void res_v(int res);
+void res_v(res_t * res);
 #define V(res) res_v(res)
 
 #endif
