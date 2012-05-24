@@ -119,7 +119,7 @@ void list_secs(int fst) {
 
 int main(int argc, char * argv[]) {
     FAT12Init();
-    list_tree(0, 0);
+    list_root();
     FAT12DeInit();
     return 0;
 }
