@@ -65,7 +65,7 @@ void shell()
                 p -= 2;
                 buffer[p] = '\0';
                 _task_func = 0;
-                task_init(f, 0x1000);
+                task_init(f, KERNELBASE);
             }
             else
             {

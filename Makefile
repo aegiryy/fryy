@@ -35,3 +35,4 @@ os.bin: kernel.o task.o io.o shell.o filesystem.o fat12.o
 clean:
 	rm -f os.bin
 	rm -f *.o
+	rm boot.img

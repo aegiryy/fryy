@@ -12,7 +12,7 @@ void main()
     asm "mov ax, cs";
     asm "mov ss, ax";
     asm "mov sp, #0";
-    task_init(init, 0x1000);
+    task_init(init, KERNELBASE);
     res = res_init(2);
     set_timer(task_schedule);
     task_set(task_get());
@@ -23,7 +23,7 @@ void main()
 /* root task */
 void init()
 {
-    task_init(shell, 0x1000);
+    task_init(shell, KERNELBASE);
     task_deinit(task_get());
 }
 

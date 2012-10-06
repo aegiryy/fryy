@@ -5,11 +5,12 @@
     int 10h
 %endmacro
 
-BaseOfLoader    equ 1000h
-OffsetOfLoader  equ 0000h
+KernelBase    equ 07E0h 
+KernelOffset  equ 0000h
 RootDirSectors  equ 14
 FirstRootSector equ 19
-StackTop        equ 0400h
+StackBase        equ 9000h
+StackOffset     equ 0FBFFh
 
 THRESHOLD       equ 0xff8
 
@@ -41,9 +42,9 @@ BS_FileSysType  db  "FAT12  ", 0
 start:
     mov ax, cs
     mov ds, ax
-    mov ax, StackTop
+    mov ax, StackBase
     mov ss, ax
-    mov sp, 0x7c00
+    mov sp, StackOffset
     ; init A:\
     xor ah, ah
     xor dl, dl
@@ -76,11 +77,11 @@ start:
 .rootindex db 0
 
 readroot:
-; DESCRIPTION: read a root sector (512 byte) into memory (BaseOfLoader:OffsetOfLoader)
+; DESCRIPTION: read a root sector (512 byte) into memory (KernelBase:KernelOffset)
 ; ax -> index of root sector
-    mov bx, BaseOfLoader
+    mov bx, KernelBase
     mov es, bx
-    mov bx, OffsetOfLoader
+    mov bx, KernelOffset
     ; FAT etc are before ROOTs
     add ax, FirstRootSector
     mov cl, 1
@@ -131,9 +132,9 @@ clear:
 
 search:
     ; search loader's first root entry
-    mov ax, BaseOfLoader
+    mov ax, KernelBase
     mov es, ax
-    mov bx, OffsetOfLoader
+    mov bx, KernelOffset
     mov cx, 0
 .cmp:
     call cmpstr
@@ -171,7 +172,7 @@ cmpstr:
 load:
 ; loading FAT, using stack to store all segments indexes
     mov ax, 1
-    mov bx, OffsetOfLoader
+    mov bx, KernelOffset
     mov cl, 9
     call read
     push word [search.ret]
@@ -189,8 +190,8 @@ load:
     jmp .chain
 
 .realload:
-; loading segments refered by bp and [.n] to BaseOfLoader:OffsetOfLoader
-    mov bx, OffsetOfLoader
+; loading segments refered by bp and [.n] to KernelBase:KernelOffset
+    mov bx, KernelOffset
 .realload.read:
     mov ax, word [bp]
     sub ax, 2
@@ -207,12 +208,12 @@ load:
     jmp .realload.read
 .end:
     ; fill DS
-    mov ax, BaseOfLoader
+    mov ax, KernelBase
     mov ds, ax
     ; long jump!
     pushf
-    push BaseOfLoader
-    push OffsetOfLoader
+    push KernelBase
+    push KernelOffset
     iret
 
 .modify:
@@ -235,9 +236,9 @@ fatentry:
     shr bx, 1
     add ax, bx
     mov si, ax
-    mov al, [es:OffsetOfLoader + si]
+    mov al, [es:KernelOffset + si]
     inc si
-    mov ah, [es:OffsetOfLoader + si]
+    mov ah, [es:KernelOffset + si]
     pop bx
     and bx, 1
     cmp bx, 0
