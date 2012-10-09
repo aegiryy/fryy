@@ -12,6 +12,7 @@ void main()
     asm "mov ax, cs";
     asm "mov ss, ax";
     asm "mov sp, #0";
+    task_sysinit();
     task_init(init, KERNELBASE);
     res = res_init(2);
     set_timer(task_schedule);

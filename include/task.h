@@ -23,6 +23,10 @@ typedef struct _tcb_t
     char stk[STKSZ];
 } tcb_t;
 
+/* Globally initialize the task system, should be called
+ * before anything else
+ */
+void task_sysinit();
 /* Initialize a task, FLAG = 0x0202 */
 tcb_t * task_init(void (*task)(), int cs);
 /* Set current task */

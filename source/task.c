@@ -3,13 +3,11 @@
 
 static tcb_t _freelist[MAXTSK];
 static tcb_t * _header;
-static char _is_init = 0;
 static int _count = 0; // task count in running list
 static tcb_t * _curtsk; /* current task */
 static res_t _reslist[MAXRES];
 static int _res_p;
 
-static void _init();
 static void _add_tcb(tcb_t * tcb);
 static void _remove_tcb(tcb_t * tcb);
 static tcb_t * _get_tail(tcb_t * start);
@@ -19,8 +17,6 @@ tcb_t * task_init(void (*task)(), int cs)
 {
     tcb_t * tcb;
     int i, flag = 0x0202;
-    if(!_is_init)
-        _init();
     if(_header == (tcb_t *)0)
         /* if not available, return NULL */
         return (tcb_t *)0;
@@ -203,10 +199,8 @@ void res_v(res_t * res)
     EXIT_CRITICAL();
 }
 
-/* Below is static functions */
-
 /* Init freelist and related global (also static) variables */
-void _init()
+void task_sysinit()
 {
     int i;
     for(i = 0; i < MAXTSK - 1; i++)
@@ -214,9 +208,10 @@ void _init()
     _freelist[i].next = (tcb_t *)0; /* make the list a circle */
     _header = _freelist;
     _res_p = 0;
-    _is_init = 1;
     _curtsk = 0;
 }
+
+/* Below is static functions */
 
 /* add a tcb to RUNNING tasks */
 void _add_tcb(tcb_t * tcb)
