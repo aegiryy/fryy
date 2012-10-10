@@ -5,7 +5,7 @@ INC=include
 SRC=source
 CFLAGS=-0 -I$(INC) -ansi -c
 
-all: boot.img os.bin
+all: boot.img kernel.bin
 
 boot.img: $(SRC)/boot.nasm
 	$(AS) -o $@ $(SRC)/boot.nasm
@@ -14,7 +14,7 @@ boot.img: $(SRC)/boot.nasm
 kernel.o: $(SRC)/kernel.c $(INC)/kernel.h
 	$(CC) $(CFLAGS) $(SRC)/kernel.c -o $@ 
 
-task.o: $(SRC)/task.c $(INC)/task.h
+task.o: $(SRC)/task.c $(INC)/task.h $(INC)/list.h
 	$(CC) $(CFLAGS) $(SRC)/task.c -o $@
 
 io.o: $(SRC)/io.c $(INC)/io.h
@@ -29,10 +29,10 @@ filesystem.o: $(SRC)/filesystem.c $(INC)/filesystem.h
 fat12.o: $(SRC)/fat12.c $(INC)/fat12.h
 	$(CC) $(CFLAGS) $(SRC)/fat12.c -o $@
 
-os.bin: kernel.o task.o io.o shell.o filesystem.o fat12.o
+kernel.bin: kernel.o task.o io.o shell.o filesystem.o fat12.o
 	$(LD) -d -M kernel.o task.o io.o shell.o filesystem.o fat12.o -L/usr/lib/bcc/ -lc -o $@
 
 clean:
-	rm -f os.bin
+	rm -f kernel.bin
 	rm -f *.o
 	rm boot.img

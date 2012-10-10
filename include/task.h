@@ -10,6 +10,11 @@
 
 #include "config.h"
 #include "cpu.h"
+#include "list.h"
+
+#define TASK_PENDING 0
+#define TASK_RUNNING 1
+#define TASK_WAITING 2
 
 typedef struct _tcb_t
 {
@@ -18,8 +23,9 @@ typedef struct _tcb_t
      * CS DS SS ES
      * IP FLAGS
      */
-    int reg[REGCNT];
-    struct _tcb_t * next;
+    LIST_HEAD(struct _tcb_t);
+    int ss, sp;
+    int state;
     char stk[STKSZ];
 } tcb_t;
 
@@ -28,17 +34,17 @@ typedef struct _tcb_t
  */
 void task_sysinit();
 /* Initialize a task, FLAG = 0x0202 */
-tcb_t * task_init(void (*task)(), int cs);
+tcb_t * task_create(void (*task)(), int cs);
 /* Set current task */
-void task_set(tcb_t * tcb);
+void task_resume(tcb_t * tcb);
 /* Save current task */
 void task_save();
 /* Get current task */
 tcb_t * task_get();
 /* Deinitialize a task, resources would be recycled */
-void task_deinit(tcb_t * tcb);
-/* Core scheduler */
-void task_schedule();
+void task_remove(tcb_t * tcb);
+/* Interrupt handler, cannot be called */
+void task_schedule_irq();
 
 typedef struct _res_t
 {

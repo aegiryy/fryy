@@ -3,9 +3,12 @@
 void sh();
 void init();
 static void set_timer(void (*scheduler)());
-static void scheduler();
 
-res_t * res;
+void TA();
+void TB();
+void TC();
+
+//res_t * res;
 
 void main()
 {
@@ -13,19 +16,35 @@ void main()
     asm "mov ss, ax";
     asm "mov sp, #0";
     task_sysinit();
-    task_init(init, KERNELBASE);
-    res = res_init(2);
-    set_timer(task_schedule);
-    task_set(task_get());
-    //fsdriver();
-    while(1);
+    //task_create(init, KERNELBASE);
+    task_create(TA, KERNELBASE);
+    task_create(TB, KERNELBASE);
+    task_create(TC, KERNELBASE);
+    set_timer(task_schedule_irq);
+    task_resume(task_get());
 }
 
 /* root task */
 void init()
 {
-    task_init(shell, KERNELBASE);
-    task_deinit(task_get());
+    task_create(shell, KERNELBASE);
+    task_remove(task_get());
+}
+
+void TA()
+{
+    while(1)
+        putc('a');
+}
+void TB()
+{
+    while(1)
+        putc('b');
+}
+void TC()
+{
+    while(1)
+        putc('c');
 }
 
 void set_timer(void (*scheduler)())

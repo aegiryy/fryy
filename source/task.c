@@ -10,32 +10,29 @@ static int _res_p;
 
 static void _add_tcb(tcb_t * tcb);
 static void _remove_tcb(tcb_t * tcb);
-static tcb_t * _get_tail(tcb_t * start);
 
 
-tcb_t * task_init(void (*task)(), int cs)
+tcb_t * task_create(void (*task)(), int cs)
 {
     tcb_t * tcb;
-    int i, flag = 0x0202;
     if(_header == (tcb_t *)0)
         /* if not available, return NULL */
         return (tcb_t *)0;
     tcb = _header;
     _header = _header->next;
-    for(i = 0; i < REGCNT; i++)
-        tcb->reg[i] = 0;
-    tcb->reg[IDXIP] = task;
-    tcb->reg[IDXFLG] = flag;
-    tcb->reg[IDXCS] = cs;
-    tcb->reg[IDXDS] = cs;
-    tcb->reg[IDXES] = cs;
-    tcb->reg[IDXSS] = cs;
-    tcb->reg[IDXSP] = &tcb->stk[STKSZ - 1];
+    tcb->ss = KERNELBASE;
+    tcb->sp = &tcb->stk[STKSZ-24];
+    *(int *)&tcb->stk[STKSZ-2] = (int)0x0282;
+    *(int *)&tcb->stk[STKSZ-4] = (int)cs;
+    *(int *)&tcb->stk[STKSZ-6] = (int)task;
+    /* don't forget setup the DS */
+    *(int *)&tcb->stk[STKSZ-22] = (int)cs;
+    tcb->state = TASK_PENDING;
     _add_tcb(tcb);
     return tcb;
 }
 
-void task_deinit(tcb_t * tcb)
+void task_remove(tcb_t * tcb)
 {
     asm "pop ax";
     asm "pushf"; /* INTR should be open */
@@ -49,7 +46,7 @@ void task_deinit(tcb_t * tcb)
     _header->next = tcb;
     if(_curtsk != (tcb_t *)0)
     {
-        task_set(_curtsk);
+        task_resume(_curtsk);
     }
     else
     {
@@ -58,27 +55,15 @@ void task_deinit(tcb_t * tcb)
     }
 }
 
-void task_set(tcb_t * tcb)
+void task_resume(tcb_t * tcb)
 {
     ENTER_CRITICAL();
     _curtsk = tcb;
+    _curtsk->state = TASK_RUNNING;
     asm "mov bx, word [__curtsk]";
     /* switch stack address space */
-    asm "mov ss, word 20[bx]";
-    asm "mov sp, word 8[bx]";
-    /* saving registers */
-    asm "push word 26[bx]";
-    asm "push word 16[bx]";
-    asm "push word 24[bx]";
-    asm "push word [bx]";
-    asm "push word 2[bx]";
-    asm "push word 4[bx]";
-    asm "push word 6[bx]";
-    asm "push word 10[bx]";
-    asm "push word 12[bx]";
-    asm "push word 14[bx]";
-    asm "push word 18[bx]";
-    asm "push word 22[bx]";
+    asm "mov ss, word 4[bx]";
+    asm "mov sp, word 6[bx]";
     asm "pop es";
     asm "pop ds";
     asm "pop di";
@@ -101,31 +86,14 @@ void task_save() {
     asm "push cx";
     asm "push dx";
     asm "push bp";
-    // SP should be saved seperatly 
     asm "push si";
     asm "push di";
     asm "push ds";
-    asm "push ss";
     asm "push es";
     // get current task 
     asm "mov bx, word [__curtsk]";
-    asm "pop word 22[bx]";
-    asm "pop word 20[bx]";
-    asm "pop word 18[bx]";
-    asm "pop word 14[bx]";
-    asm "pop word 12[bx]";
-    asm "pop word 10[bx]";
-    asm "pop word 6[bx]";
-    asm "pop word 4[bx]";
-    asm "pop word 2[bx]";
-    asm "pop word [bx]";
-    asm "pop ax"; // return address
-    asm "pop word 24[bx]";
-    asm "pop word 16[bx]";
-    asm "pop word 26[bx]";
-    asm "mov word 8[bx], sp";
-
-    asm "push ax";
+    asm "mov word 4[bx], ss";
+    asm "mov word 6[bx], sp";
 }
 
 tcb_t * task_get() {
@@ -134,12 +102,25 @@ tcb_t * task_get() {
 
 /* Before call task schedule, FLAG, CS, IP should
  * be pushed into stack */
-void task_schedule()
+void task_schedule_irq()
 {
-    asm "call _task_save";
+    asm "push ax";
+    asm "push bx";
+    asm "push cx";
+    asm "push dx";
+    asm "push bp";
+    asm "push si";
+    asm "push di";
+    asm "push ds";
+    asm "push es";
+    // get current task 
+    asm "mov bx, word [__curtsk]";
+    asm "mov word 4[bx], ss";
+    asm "mov word 6[bx], sp";
+    // context switch
     asm "mov al, #0x20";
     asm "out #0x20, al";
-    task_set(_curtsk->next);
+    task_resume(_curtsk->next);
 }
 
 res_t * res_init(int c)
@@ -179,7 +160,7 @@ void res_p(res_t * res)
             tcb->next = res->waitlist->next;
             res->waitlist->next = tcb;
         }
-        task_set(_curtsk);
+        task_resume(_curtsk);
     }
     EXIT_CRITICAL();
 }
@@ -216,45 +197,17 @@ void task_sysinit()
 /* add a tcb to RUNNING tasks */
 void _add_tcb(tcb_t * tcb)
 {
-    if(_curtsk == 0)
-    {
-        _curtsk = tcb;
-        tcb->next = _curtsk;
-    }
-    else
-    {
-        tcb_t * tail = _get_tail(_curtsk);
-        tail->next = tcb;
-        tail = tail->next;
-        tail->next = _curtsk;
-    }
+    LIST_ADD(_curtsk, tcb);
     _count++;
 }
 
 /* remove current tcb from RUNNING tasks */
 void _remove_tcb(tcb_t * tcb)
 {
-    if(_curtsk == 0)
+    if (tcb == 0)
         return;
-    if(_curtsk->next == _curtsk)
-        _curtsk = 0;
-    else
-    {
-        tcb_t * tail = _get_tail(tcb);
-        tail->next = tcb->next;
-        if (_curtsk == tcb)
-            _curtsk = _curtsk->next;
-    }
+    LIST_REMOVE(tcb);
+    if (_curtsk == tcb && _curtsk != 0)
+        _curtsk = _curtsk->next;
     _count--;
-}
-
-/* return tail tcb of a list started by start */
-tcb_t * _get_tail(tcb_t * start)
-{
-    tcb_t * tcb = start;
-    if(start == 0)
-        return 0;
-    while(tcb->next != start)
-        tcb = tcb->next;
-    return tcb;
 }

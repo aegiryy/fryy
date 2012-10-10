@@ -2,6 +2,6 @@
 
 mkdir ./floppy
 mount -o loop boot.img ./floppy/
-cp os.bin ./floppy/
+cp kernel.bin ./floppy/
 umount ./floppy/
 rmdir floppy

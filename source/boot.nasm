@@ -36,7 +36,7 @@ BS_DrvNum       db  0x0
 BS_Reserved1    db  0x0
 BS_BootSig      db  0x29
 BS_VolID        dd  0x0
-BS_VolLab       db  "FreeYYOS", 0, 0, 0
+BS_VolLab       db  "FRYY", 0, 0, 0, 0, 0, 0, 0
 BS_FileSysType  db  "FAT12  ", 0   
 
 start:
@@ -73,7 +73,7 @@ start:
     mov dx, 0
     int 10h
     jmp $
-.noloader.str db 'OS.BIN NOT FOUND'
+.noloader.str db 'KERNEL.BIN NOT FOUND'
 .rootindex db 0
 
 readroot:
@@ -167,7 +167,7 @@ cmpstr:
     jmp .loop
 .end:
     ret
-.str db 'OS      BIN'
+.str db 'KERNEL  BIN'
 
 load:
 ; loading FAT, using stack to store all segments indexes

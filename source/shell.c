@@ -1,6 +1,6 @@
 #include "shell.h"
 #define BEGIN_CMD() int task_func = _task_func
-#define END_CMD() if (task_func == 0) task_deinit(task_get()); else return
+#define END_CMD() if (task_func == 0) task_remove(task_get()); else return
 
 static int _task_func = 0;
 static fat_entry_t cd;
@@ -65,7 +65,7 @@ void shell()
                 p -= 2;
                 buffer[p] = '\0';
                 _task_func = 0;
-                task_init(f, KERNELBASE);
+                task_create(f, KERNELBASE);
             }
             else
             {
@@ -108,7 +108,7 @@ static void cmd_exit()
      * excepts there only be the shell
      * task
      */
-    task_deinit(task_get()->next);
+    task_remove(task_get()->next);
 }
 
 static void cmd_dir()
