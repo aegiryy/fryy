@@ -5,7 +5,7 @@ char sector[SECTOR_SIZE];
 static char fat[SECTOR_SIZE];
 static int fat_value(int fstClus);
 
-int fat_dir_read(fat_entry_t * dir, int (*handler)(fat_entry_t * entry))
+int fs_dir_read(dentry_t * dir, int (*handler)(dentry_t * entry))
 {
     int i, j;
     if (IS_ROOT(dir))
@@ -13,8 +13,8 @@ int fat_dir_read(fat_entry_t * dir, int (*handler)(fat_entry_t * entry))
         for (i = 19; i < 33; i++)
         {
             load_sectors(sector, i, 1);
-            for (j = 0; j < SECTOR_SIZE / sizeof(fat_entry_t); j++)
-                if (handler(((fat_entry_t *)sector)+j))
+            for (j = 0; j < SECTOR_SIZE / sizeof(dentry_t); j++)
+                if (handler(((dentry_t *)sector)+j))
                     return 1;
         }
     }
@@ -25,15 +25,15 @@ int fat_dir_read(fat_entry_t * dir, int (*handler)(fat_entry_t * entry))
         {
             load_sectors(sector, PHYSICAL_SECTOR(clus), 1);
             clus = fat_value(clus);
-            for (j = 0; j < SECTOR_SIZE / sizeof(fat_entry_t); j++)
-                if (handler(((fat_entry_t *)sector)+j))
+            for (j = 0; j < SECTOR_SIZE / sizeof(dentry_t); j++)
+                if (handler(((dentry_t *)sector)+j))
                     return 1;
         } while (clus < THRESHOLD);
     }
     return 0;
 }
 
-int fat_file_read(fat_entry_t * entry, int (*handler)(char * sector, int length))
+int fs_file_read(dentry_t * entry, int (*handler)(char * sector, int length))
 {
     int clus = entry->fstClus;
     int left = entry->filesize[0];

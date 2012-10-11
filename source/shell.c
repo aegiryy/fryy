@@ -3,16 +3,16 @@
 #define END_CMD() if (task_func == 0) task_remove(task_get()); else return
 
 static int _task_func = 0;
-static fat_entry_t cd;
+static dentry_t cd;
 static char buffer[BUFSZ];
 static void cmd_echo();
 static void cmd_exit();
 static void cmd_cd();
-static int ehandler_cd(fat_entry_t * entry);
+static int ehandler_cd(dentry_t * entry);
 static void cmd_dir();
-static int ehandler_dir(fat_entry_t * entry);
+static int ehandler_dir(dentry_t * entry);
 static void cmd_cat();
-static int ehandler_cat(fat_entry_t * entry);
+static int ehandler_cat(dentry_t * entry);
 static int shandler_cat(char * sector, int length);
 static void (*find_procedure(char * cmd))();
 static void cmd_print();
@@ -114,10 +114,10 @@ static void cmd_exit()
 static void cmd_dir()
 {
     BEGIN_CMD();
-    fat_dir_read(&cd, ehandler_dir);
+    fs_dir_read(&cd, ehandler_dir);
     END_CMD();
 }
-static int ehandler_dir(fat_entry_t * entry)
+static int ehandler_dir(dentry_t * entry)
 {
     if (IS_FREE(entry))
         return 0;
@@ -132,13 +132,13 @@ static int ehandler_dir(fat_entry_t * entry)
 static void cmd_cd()
 {
     BEGIN_CMD();
-    if (fat_dir_read(&cd, ehandler_cd))
+    if (fs_dir_read(&cd, ehandler_cd))
         END_CMD();
     puts("No such directory!");
     ENTER();
     END_CMD();
 }
-static int ehandler_cd(fat_entry_t * entry)
+static int ehandler_cd(dentry_t * entry)
 {
     if (IS_FREE(entry))
         return 0;
@@ -154,20 +154,20 @@ static int ehandler_cd(fat_entry_t * entry)
 static void cmd_cat()
 {
     BEGIN_CMD();
-    if (fat_dir_read(&cd, ehandler_cat))
+    if (fs_dir_read(&cd, ehandler_cat))
         END_CMD();
     puts("No such file!");
     ENTER();
     END_CMD();
 }
-static int ehandler_cat(fat_entry_t * entry)
+static int ehandler_cat(dentry_t * entry)
 {
     if (IS_FREE(entry))
         return 0;
     if (ATTR_DIRECTORY(entry) || ATTR_ARCHIVE(entry))
         if (strncmp(entry->name, buffer+4, strlen(buffer+4)) == 0)
         {
-            fat_file_read(entry, shandler_cat);
+            fs_file_read(entry, shandler_cat);
             ENTER();
             return 1;
         }

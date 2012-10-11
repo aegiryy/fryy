@@ -44,8 +44,8 @@ typedef struct _list_t
     }\
     else\
     {\
-        (elem)->prev = (list)->prev;\
-        (list)->prev = (elem);\
+        (elem)->prev = (list);\
+        (list) = (elem);\
     }
 
 #endif

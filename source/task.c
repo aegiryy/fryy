@@ -17,21 +17,26 @@ tcb_t * task_create(void (*task)(), int cs)
     _header = _header->prev;
     tcb->ss = KERNELBASE;
     tcb->sp = &tcb->stk[STKSZ-24];
-    *(int *)&tcb->stk[STKSZ-2] = (int)0x0282;
-    *(int *)&tcb->stk[STKSZ-4] = (int)cs;
-    *(int *)&tcb->stk[STKSZ-6] = (int)task;
-    /* don't forget setup the DS */
-    *(int *)&tcb->stk[STKSZ-22] = (int)cs;
+    *(int *)&tcb->stk[STKSZ-2*(IDXFLG+1)] = (int)0x0282;
+    *(int *)&tcb->stk[STKSZ-2*(IDXCS+1)] = (int)cs;
+    *(int *)&tcb->stk[STKSZ-2*(IDXIP+1)] = (int)task;
+    /* don't forget to setup the DS */
+    *(int *)&tcb->stk[STKSZ-2*(IDXDS+1)] = (int)cs;
     tcb->state = TASK_PENDING;
     CDLIST_ADD(_curtsk, tcb);
     return tcb;
 }
 
+/* Remove a task. If no task is running, system
+ * will go shutdown
+ */
 void task_remove(tcb_t * tcb)
 {
     ENTER_CRITICAL();
+    tcb_t * zombie = tcb;
     CDLIST_REMOVE(tcb);
-    LSLIST_ADD(_header, tcb);
+    zombie->state = TASK_ZOMBIE;
+    LSLIST_ADD(_header, zombie);
     if (tcb != 0)
     {
         task_schedule();
@@ -138,7 +143,10 @@ void task_sysinit()
 {
     int i;
     for(i = 0; i < MAXTSK - 1; i++)
+    {
         _freelist[i].prev = _freelist + (i + 1);
+        _freelist[i].state = TASK_ZOMBIE;
+    }
     _freelist[i].prev = (tcb_t *)0; /* make the list a circle */
     _header = _freelist;
     _res_p = 0;

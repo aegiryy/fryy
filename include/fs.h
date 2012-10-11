@@ -14,12 +14,12 @@ typedef struct {
     int wrtDate;
     int fstClus;
     int filesize[2];
-} fat_entry_t;
+} dentry_t;
 #pragma pack()
 
 /* return 1 if handler wannna stop */
-typedef int (*fat_entry_handler_t)(fat_entry_t * entry);
-typedef int (*fat_sector_handler_t)(char * sector, int length);
+typedef int (*dentry_handler_t)(dentry_t * entry);
+typedef int (*sector_handler_t)(char * sector, int length);
 
 #define PHYSICAL_SECTOR(fstClus) (31+(fstClus))
 #define IS_FREE(entry) ((entry)->name[0] == 0xE5 || (entry)->name[0] == 0x00)
@@ -29,7 +29,7 @@ typedef int (*fat_sector_handler_t)(char * sector, int length);
 #define ATTR_SYSTEM(entry) ((entry)->attr & 0x04)
 #define ATTR_DIRECTORY(entry) ((entry)->attr & 0x10)
 #define ATTR_ARCHIVE(entry) ((entry)->attr & 0x20)
-int fat_dir_traverse(fat_entry_t * dir, fat_entry_handler_t ehandler);
-int fat_file_traverse(fat_entry_t * entry, fat_sector_handler_t shandler);
+int fs_dir_traverse(dentry_t * dir, dentry_handler_t dentry_handler);
+int fs_file_traverse(dentry_t * entry, sector_handler_t sector_handler);
 
 #endif
