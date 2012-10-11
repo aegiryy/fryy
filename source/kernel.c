@@ -1,7 +1,6 @@
 #include "kernel.h"
 
 void sh();
-void init();
 static void set_timer(void (*scheduler)());
 
 void TA();
@@ -16,20 +15,13 @@ void main()
     asm "mov ss, ax";
     asm "mov sp, #0";
     task_sysinit();
-    task_create(init, KERNELBASE);
+    task_create(shell, KERNELBASE);
     //task_create(TA, KERNELBASE);
     //task_create(TB, KERNELBASE);
     //task_create(TC, KERNELBASE);
     res = res_init(1);
     set_timer(task_schedule_irq);
     task_resume(task_get());
-}
-
-/* root task */
-void init()
-{
-    task_create(shell, KERNELBASE);
-    task_remove(task_get());
 }
 
 void TA()

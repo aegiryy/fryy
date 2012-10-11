@@ -1,4 +1,4 @@
-#include "fat12.h"
+#include "fs.h"
 #include "io.h"
 
 char sector[SECTOR_SIZE];

@@ -5,6 +5,6 @@
 #include "config.h"
 #include "task.h"
 #include "shell.h"
-#include "filesystem.h"
+#include "fs.h"
 
 #endif

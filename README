@@ -26,11 +26,11 @@ ROADMAP:
 (4) Build a bootloader of our future OS
     a)  Understanding the limit of floppy boot: code size limit of 512B
     b)  BootLoader construction process:
-            * Search OS.BIN in RootDirSectors
+            * Search KERNEL.BIN in RootDirSectors
             * Read File Allocation Table (FAT) for details
-            * Loading OS.BIN using BIOS INT (0x13)
-            * Transfer control to OS.BIN
-(5) Build OS.BIN (see source file os.nasm)
+            * Loading KERNEL.BIN using BIOS INT (0x13)
+            * Transfer control to KERNEL.BIN
+(5) Build KERNEL.BIN (see source file os.nasm)
     a)  Download Bruce's C Compiler (bcc)
         HOWTO: Using BCC to generate flat binary file
             bcc -0 -ansi -c source.c
