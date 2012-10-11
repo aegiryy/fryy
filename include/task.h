@@ -18,10 +18,8 @@
 
 typedef struct _tcb_t
 {
-    /* AX BX CX DX
-     * SP BP SI DI
-     * CS DS SS ES
-     * IP FLAGS
+    /* *prev has multi uses like waiting list, 
+     * since *next is used for schedule
      */
     LIST_HEAD(struct _tcb_t);
     int ss, sp;
@@ -37,20 +35,19 @@ void task_sysinit();
 tcb_t * task_create(void (*task)(), int cs);
 /* Set current task */
 void task_resume(tcb_t * tcb);
-/* Save current task */
-void task_save();
 /* Get current task */
 tcb_t * task_get();
 /* Deinitialize a task, resources would be recycled */
 void task_remove(tcb_t * tcb);
 /* Interrupt handler, cannot be called */
 void task_schedule_irq();
+#define task_schedule() asm "sti"; asm "int 0x08"
 
 typedef struct _res_t
 {
+    LIST_HEAD(struct _res_t);
     int count;
     tcb_t * waitlist;
-    struct _res_t * next;
 } res_t;
 
 res_t * res_init(int c);
