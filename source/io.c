@@ -35,6 +35,11 @@ void print(int n)
 {
     char bit[10];
     char p = 0;
+    if (n == 0)
+    {
+        putc('0');
+        return;
+    }
     while (n > 0)
     {
         bit[p++] = n % 10;

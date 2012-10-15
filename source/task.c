@@ -5,6 +5,7 @@ static tcb_t _freelist[MAXTSK];
 static tcb_t * _header;
 static tcb_t * _curtsk; /* current task */
 static res_t _reslist[MAXRES];
+static void task_stub();
 static int _res_p;
 
 tcb_t * task_create(void (*task)(), int cs)
@@ -33,19 +34,15 @@ tcb_t * task_create(void (*task)(), int cs)
 void task_remove(tcb_t * tcb)
 {
     ENTER_CRITICAL();
-    tcb_t * zombie = tcb;
-    CDLIST_REMOVE(tcb);
-    zombie->state = TASK_ZOMBIE;
-    LSLIST_ADD(_header, zombie);
-    if (tcb != 0)
+    if(tcb->tid == 0)
     {
-        task_schedule();
-    }
-    else
-    {
-        puts("*#END#*");
+        puts("Now you can halt your machine.");
         while(1);
     }
+    tcb->state = TASK_ZOMBIE;
+    CDLIST_REMOVE(tcb);
+    LSLIST_ADD(_header, tcb);
+    task_schedule();
     EXIT_CRITICAL();
 }
 
@@ -146,9 +143,18 @@ void task_sysinit()
     {
         _freelist[i].prev = _freelist + (i + 1);
         _freelist[i].state = TASK_ZOMBIE;
+        _freelist[i].tid = i;
     }
     _freelist[i].prev = (tcb_t *)0; /* make the list a circle */
+    _freelist[i].tid = i;
     _header = _freelist;
     _res_p = 0;
     _curtsk = 0;
+    task_create(task_stub, KERNELBASE);
+}
+
+void task_stub()
+{
+    while(1)
+        task_schedule();
 }

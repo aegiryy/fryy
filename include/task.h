@@ -24,7 +24,7 @@ typedef struct _tcb_t
      */
     LIST_HEAD(struct _tcb_t);
     int ss, sp;
-    int state;
+    char state, tid;
     char stk[STKSZ];
 } tcb_t;
 

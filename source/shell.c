@@ -1,12 +1,16 @@
 #include "shell.h"
 #define BEGIN_CMD() int task_func = _task_func
 #define END_CMD() if (task_func == 0) task_remove(task_get()); else return
+#define ADD_CMD(cmd)\
+    if (strncmp(#cmd, buffer, strlen(#cmd)) == 0)\
+        return cmd_##cmd##;
 
 static int _task_func = 0;
 static dentry_t cd;
 static char buffer[BUFSZ];
 static void cmd_echo();
-static void cmd_exit();
+static void cmd_halt();
+static void cmd_ps();
 static void cmd_cd();
 static int ehandler_cd(dentry_t * entry);
 static void cmd_dir();
@@ -77,18 +81,13 @@ void shell()
 }
 static void (*find_procedure(char * cmd))()
 {
-    if (strncmp("echo", buffer, 4) == 0)
-        return cmd_echo;
-    if (strncmp("exit", buffer, 4) == 0)
-        return cmd_exit;
-    if (strncmp("dir", buffer, 3) == 0)
-        return cmd_dir;
-    if (strncmp("cd", buffer, 2) == 0)
-        return cmd_cd;
-    if (strncmp("cat", buffer, 3) == 0)
-        return cmd_cat;
-    if (strncmp("print", buffer, 5) == 0)
-        return cmd_print;
+    ADD_CMD(echo);
+    ADD_CMD(dir);
+    ADD_CMD(cd);
+    ADD_CMD(cat);
+    ADD_CMD(print);
+    ADD_CMD(ps);
+    ADD_CMD(halt);
     return 0;
 }
 
@@ -102,13 +101,16 @@ static void cmd_echo()
     END_CMD();
 }
 
-static void cmd_exit()
+static void cmd_halt()
 {
     /* Kill tasks other than shell 
      * excepts there only be the shell
      * task
      */
-    task_remove(task_get()->next);
+    tcb_t * tcb = task_get();
+    while (tcb->tid)
+        tcb = tcb->next;
+    task_remove(tcb);
 }
 
 static void cmd_dir()
@@ -117,6 +119,22 @@ static void cmd_dir()
     fs_dir_read(&cd, ehandler_dir);
     END_CMD();
 }
+
+static void cmd_ps()
+{
+    BEGIN_CMD();
+    tcb_t * current, * target;
+    target = task_get();
+    current = target;
+    do
+    {
+        print(current->tid);ENTER();
+        current = current->next;
+    }
+    while(current != target);
+    END_CMD();
+}
+
 static int ehandler_dir(dentry_t * entry)
 {
     if (IS_FREE(entry))

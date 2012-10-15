@@ -27,13 +27,8 @@ typedef struct _list_t
 
 /* elem cannot be NULL */
 #define CDLIST_REMOVE(elem)\
-    if ((elem)->next == (elem))\
-        (elem) = 0;\
-    else\
-    {\
-        (elem)->prev->next = (elem)->next;\
-        (elem)->next->prev = (elem)->prev;\
-    }\
+    (elem)->prev->next = (elem)->next;\
+    (elem)->next->prev = (elem)->prev;
 
 /* LSLIST uses *prev since *next is used for schedule */
 #define LSLIST_ADD(list, elem)\
