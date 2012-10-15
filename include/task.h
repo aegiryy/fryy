@@ -45,6 +45,7 @@ void task_remove(tcb_t * tcb);
 /* Interrupt handler, cannot be called!! */
 void task_schedule_irq();
 #define task_schedule() asm "sti"; asm "int 0x08"
+void task_set_scheduler(void (*scheduler)());
 
 typedef struct _res_t
 {

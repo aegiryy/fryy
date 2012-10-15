@@ -94,6 +94,18 @@ void task_schedule_irq()
     task_resume(_curtsk->next);
 }
 
+void task_set_scheduler(void (*scheduler)())
+{
+    scheduler = scheduler;
+    asm "push ds";
+    asm "mov ax, #0";
+    asm "mov ds, ax";
+    asm "mov ax, 4[bp]";
+    asm "mov word [0x08 * 4], ax";
+    asm "mov word [0x08 * 4 + 2], cs";
+    asm "pop ds";
+}
+
 res_t * res_init(int c)
 {
     ENTER_CRITICAL();
@@ -151,6 +163,7 @@ void task_sysinit()
     _res_p = 0;
     _curtsk = 0;
     task_create(task_stub, KERNELBASE);
+    task_set_scheduler(task_schedule_irq);
 }
 
 void task_stub()
