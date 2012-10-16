@@ -107,10 +107,16 @@ static void cmd_halt()
      * excepts there only be the shell
      * task
      */
-    tcb_t * tcb = task_get();
+    tcb_t * tcb = 0;
+    asm "mov ax, #1"; // task_get
+    asm "int 0x21";
+    asm "mov word -6[bp], ax"; // return value
     while (tcb->tid)
         tcb = tcb->next;
-    task_remove(tcb);
+    //task_remove(tcb);
+    asm "push word -6[bp]"; // pass tcb to syscall
+    asm "mov ax, #0"; // task_remove
+    asm "int 0x21";
 }
 
 static void cmd_dir()

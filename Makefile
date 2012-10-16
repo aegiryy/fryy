@@ -26,8 +26,11 @@ shell.o: $(SRC)/shell.c $(INC)/shell.h
 fs.o: $(SRC)/fs.c $(INC)/fs.h
 	$(CC) $(CFLAGS) $(SRC)/fs.c -o $@
 
-kernel.bin: kernel.o task.o io.o shell.o fs.o
-	$(LD) -d -M kernel.o task.o io.o shell.o fs.o -L/usr/lib/bcc/ -lc -o $@
+syscall.o: $(SRC)/syscall.c $(INC)/syscall.h
+	$(CC) $(CFLAGS) $(SRC)/syscall.c -o $@
+
+kernel.bin: kernel.o task.o io.o shell.o fs.o syscall.o
+	$(LD) -d -M kernel.o task.o io.o shell.o fs.o syscall.o -L/usr/lib/bcc/ -lc -o $@
 
 clean:
 	rm -f kernel.bin

@@ -6,5 +6,6 @@
 #include "task.h"
 #include "shell.h"
 #include "fs.h"
+#include "syscall.h"
 
 #endif
