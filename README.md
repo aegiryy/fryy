@@ -1,5 +1,3 @@
-# fryy #
-
 ## OVERVIEW ##
 1. Get deep understanding of INTEL 8086 architecture
 2. Build a micro OS kernel including 
@@ -44,7 +42,7 @@
     * Write a simple SHELL process dealing with I/O  
       TIPS: Library functions (e.g. strcmp) can be linked to target image
 
-## HOW TO RUN IT? ##
+## HOW TO RUN ##
 1. Install QEMU & BCC (including bcc, as86 and ld86)
 2. make
 3. Put os.bin to boot.img (e.g. under Linux).
