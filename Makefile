@@ -36,3 +36,11 @@ clean:
 	rm -f kernel.bin
 	rm -f *.o
 	rm boot.img
+
+run:
+	mkdir ./floppy
+	mount -o loop boot.img ./floppy/
+	cp kernel.bin ./floppy/
+	umount ./floppy/
+	rmdir floppy
+	qemu -fda boot.img

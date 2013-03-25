@@ -14,8 +14,6 @@
 #define N_task_remove 0
 #define N_task_get 1
 
-void syscall_irq(int cs, int flag, ...);
-void syscall_set_handler(void (*handler)());
 void syscall_sysinit();
 
 extern void *syscall_table[];

@@ -8,7 +8,7 @@ void *syscall_table[] = {
 static int _IP, _CS, _FLAG;
 
 /* AX saves return value */
-void syscall_irq()
+static void syscall_irq()
 {
     asm "pop word [__IP]";
     asm "pop word [__CS]";
@@ -24,12 +24,7 @@ void syscall_irq()
     asm "iret";
 }
 
-void syscall_sysinit()
-{
-    syscall_set_handler(syscall_irq);
-}
-
-void syscall_set_handler(void (*handler)())
+static void syscall_set_handler(void (*handler)())
 {
     handler = handler;
     asm "push ds";
@@ -40,3 +35,9 @@ void syscall_set_handler(void (*handler)())
     asm "mov word [0x21 * 4 + 2], cs";
     asm "pop ds";
 }
+
+void syscall_sysinit()
+{
+    syscall_set_handler(syscall_irq);
+}
+
